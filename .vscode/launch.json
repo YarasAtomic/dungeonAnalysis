@@ -1,0 +1,74 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "renderer",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "./src/*.cpp",
+                "./tool/*.cpp",
+                "./imgui/*.cpp",
+                "-I",
+                "./include",
+                "-I",
+                "./imgui",
+                "-I",
+                "/usr/include",
+                "-I",
+                "/usr/local/include",
+                "-o",
+                "raydungeon",
+                "-L",
+                "/usr/local/lib",
+                "-lraylib",
+                "-DPLATFORM_DESKTOP",
+                "-g"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "basicDun",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "./tool/*.cpp",
+                "./algorithmsrc/basicDun.cpp",
+                "-I",
+                "./include",
+                "-g",
+                "-o",
+                "./algorithm/basicDun"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "wilsonMaze",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "./tool/*.cpp",
+                "./algorithmsrc/wilsonMaze.cpp",
+                "-I",
+                "./include",
+                "-g",
+                "-o",
+                "./algorithm/wilsonMaze"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "algorithm",
+            "type": "shell",
+            "command": "mkdir",
+            "args": [
+                "-p",
+                "./algorithm"
+            ],
+            "group": "build"
+        }
+    ]
+}

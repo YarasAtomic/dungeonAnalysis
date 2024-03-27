@@ -1,0 +1,49 @@
+SHELL=/bin/bash
+RENDERBIN= raydungeon
+CXX= g++
+
+SRCDIR= src
+OBJDIR= obj
+TOOLDIR= tool
+IMGUIDIR= imgui
+INCLUDE= -I ./include -I ./imgui -I /usr/include -I /usr/local/include
+
+SRC_MODULES= $(wildcard $(SRCDIR)/*.cpp)
+TOOL_MODULES= $(wildcard $(TOOLDIR)/*.cpp)
+IMGUI_MODULES= $(wildcard $(IMGUIDIR)/*.cpp)
+
+LIBSDIR= -L /usr/local/lib
+
+LIBS= -lraylib
+CXXFLAGS= $(INCLUDE) -std=c++20 -DPLATFORM_DESKTOP -g -pthread
+
+SRC_OBJ = $(SRC_MODULES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+TOOL_OBJ = $(TOOL_MODULES:$(TOOLDIR)/%.cpp=$(OBJDIR)/%.o)
+IMGUI_OBJ = $(IMGUI_MODULES:$(IMGUIDIR)/%.cpp=$(OBJDIR)/%.o)
+
+PHONY: renderer
+
+renderer: $(SRC_OBJ)
+	$(CXX) -o $(RENDERBIN) $(OBJDIR)/*.o $(LDFLAGS) $(LIBS)
+# g++ -std=c++20 ./src/*.cpp $(TOOLDIR)/*.cpp ./imgui/*.cpp -I ./include -I ./imgui -I /usr/include -I /usr/local/include -o $(RENDERBIN) 
+
+basicDun wilsonMaze binarySpace: algorithm
+	$(CXX) $(TOOLDIR)/*.cpp ./algorithmsrc/$@.cpp -I ./include -g -o ./algorithm/$@
+
+test: $(TOOL_OBJ)
+	echo hola
+
+algorithm:
+	mkdir -p ./algorithm
+
+$(TOOL_OBJ): $(OBJDIR)/%.o: $(TOOLDIR)/%.cpp
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+$(IMGUI_OBJ): $(OBJDIR)/%.o: $(IMGUIDIR)/%.cpp
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+$(SRC_OBJ): $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(TOOL_OBJ) $(IMGUI_OBJ)
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+$(OBJDIR):
+	mkdir $(OBJDIR)

@@ -1,0 +1,1 @@
+g++ dbamaker.cpp ../tool/* -I ../include -I /usr/include -I /usr/local/include -o dbaMaker
