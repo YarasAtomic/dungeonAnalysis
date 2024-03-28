@@ -1,27 +1,33 @@
 #include "dungeonList.h"
 
-void DungeonList::Show()
+void DungeonList::ShowAsWindow()
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::SetNextWindowSizeConstraints(ImVec2(200, 200), ImVec2((float)GetScreenWidth(), (float)GetScreenHeight()));
 
     
     if (ImGui::Begin("Dungeon list", &open, ImGuiWindowFlags_NoScrollbar))
     {
         if(ImGui::Button("Reload")) Reload();
-
-        ImGui::BeginListBox("##listbox::dungeons");
-        for(int i = 0; i < dungeons.size();i++){
-            if(ImGui::Button(dungeons[i].c_str())){
-                selected = dungeons[i];
+        ImGui::Spacing();
+        ImGui::BeginChild("##child::dungeons", ImVec2(0, 260), ImGuiChildFlags_Border,ImGuiWindowFlags_None);
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign,ImVec2(0,0.5));
+        if (ImGui::BeginTable("##table::dungeons", 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
+        {
+            ImGui::TableNextColumn();
+            for(int i = 0; i < dungeons.size();i++){
+                if(ImGui::Button(dungeons[i].c_str(), ImVec2(-FLT_MIN, 0.0f)))
+                    selected = dungeons[i];
             }
+            ImGui::EndTable();
         }
-
-        ImGui::EndListBox();
+        ImGui::PopStyleVar();
+        ImGui::EndChild();
 
     }
     ImGui::End();
-    ImGui::PopStyleVar();
+}
+
+void DungeonList::Show(){
 }
 
 void DungeonList::Setup(){

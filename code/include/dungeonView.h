@@ -41,7 +41,8 @@ class DungeonView : public DocumentWindow{
     void playerModeUpdate(dungeonMatrix * dungeon,Vector3 dungeonPos,Vector3 & playerPos);
 
     void InteractionModeUpdate(Vector3 & playerPos);
-
+protected:
+    void Show() override;
 public:
     std::string name;
 
@@ -50,7 +51,7 @@ public:
     Camera3D camera = { 0 };
     // Texture2D gridTexture = { 0 };
     void Setup() override;
-    void Show() override;
+    void ShowAsWindow() override;
     void Update() override;
     void Shutdown() override;
 };

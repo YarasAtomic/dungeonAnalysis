@@ -35,13 +35,15 @@ class AlgorithmConfig : public DocumentWindow{
     bool hasToGeneratePath = false;
 
     double dungeonTime = 0;
+protected:
+    void Show() override;
 public:
     bool hasToUpdateStats = false;
     dungeonMatrix * currentDungeon;
 
     AlgorithmConfig(std::string name,std::string path,std::string out);
     void Setup() override;
-    void Show() override;
+    void ShowAsWindow() override;
     void Update() override;
     void Shutdown() override;
 

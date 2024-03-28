@@ -1,27 +1,35 @@
 #include "algorithmList.h"
 
-void AlgorithmList::Show()
+void AlgorithmList::ShowAsWindow()
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    // ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::SetNextWindowSizeConstraints(ImVec2(200, 200), ImVec2((float)GetScreenWidth(), (float)GetScreenHeight()));
 
     
     if (ImGui::Begin("Algorithm list", &open, ImGuiWindowFlags_NoScrollbar))
     {
         if(ImGui::Button("Reload")) Reload();
-
-        ImGui::BeginListBox("##listbox::algorithms");
-        for(int i = 0; i < algorithms.size();i++){
-            if(ImGui::Button(algorithms[i].c_str())){
-                selected = algorithms[i];
+        ImGui::Spacing();
+        ImGui::BeginChild("##child::algorithms", ImVec2(0, 260), ImGuiChildFlags_Border,ImGuiWindowFlags_None);
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign,ImVec2(0,0.5));
+        if (ImGui::BeginTable("##table::algorithms", 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
+        {
+            ImGui::TableNextColumn();
+            for(int i = 0; i < algorithms.size();i++){
+                if(ImGui::Button(algorithms[i].c_str(), ImVec2(-FLT_MIN, 0.0f))){
+                    selected = algorithms[i];
+                }
             }
+            ImGui::EndTable();
         }
-
-        ImGui::EndListBox();
-
+        ImGui::PopStyleVar();
+        ImGui::EndChild();
     }
     ImGui::End();
-    ImGui::PopStyleVar();
+}
+
+void AlgorithmList::Show(){
+
 }
 
 void AlgorithmList::Setup(){

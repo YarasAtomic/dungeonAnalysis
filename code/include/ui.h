@@ -14,6 +14,8 @@
 
 class DocumentWindow
 {
+protected:
+    virtual void Show() = 0;
 public:
 	bool open = false;
 
@@ -21,7 +23,7 @@ public:
 
 	virtual void Setup() = 0;
 	virtual void Shutdown() = 0;
-	virtual void Show() = 0;
+	virtual void ShowAsWindow() = 0;
 	virtual void Update() = 0;
 
 	bool focused = false;

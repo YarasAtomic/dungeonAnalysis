@@ -32,7 +32,7 @@ void DoMainMenu()
 
 		if (ImGui::BeginMenu("Window"))
 		{
-			// ImGui::MenuItem("ImGui Demo", nullptr, &imGuiDemoOpen);
+			ImGui::MenuItem("ImGui Demo", nullptr, &imGuiDemoOpen);
 			ImGui::MenuItem("Algorithm List", nullptr, &algorithmList.open);
             ImGui::MenuItem("Dungeon List", nullptr, &dungeonList.open);
 
@@ -52,6 +52,13 @@ void raylib()
     SetTargetFPS(144); // Set framerate
     rlImGuiSetup(true);
 	ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
+
+    // Style setup
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowPadding.x = 6;
+    style.FramePadding.x = 6;
+
+    // Default windows
 
     algorithmList.Setup();
     algorithmList.open = true;
@@ -90,21 +97,21 @@ void raylib()
             ImGui::ShowDemoWindow(&imGuiDemoOpen);
 
         if(algorithmList.open)
-            algorithmList.Show();
+            algorithmList.ShowAsWindow();
             
         if(dungeonList.open)
-            dungeonList.Show();
+            dungeonList.ShowAsWindow();
 
         for(int i = 0; i < algorithConfig.size();i++){
-            if(algorithConfig[i]->open) algorithConfig[i]->Show();
+            if(algorithConfig[i]->open) algorithConfig[i]->ShowAsWindow();
         }
 
         for(int i = 0; i < dungeonStat.size();i++){
-            if(dungeonStat[i]->open) dungeonStat[i]->Show();
+            if(dungeonStat[i]->open) dungeonStat[i]->ShowAsWindow();
         }
 
         for(int i = 0; i < dungeonView.size();i++){
-            if(dungeonView[i]->open) dungeonView[i]->Show();
+            if(dungeonView[i]->open) dungeonView[i]->ShowAsWindow();
         }
 
         rlImGuiEnd();

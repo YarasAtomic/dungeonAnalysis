@@ -29,7 +29,8 @@ class DungeonStat : public DocumentWindow{
 
     void GenerateStats();
     void GeneratePath();
-
+protected:
+    void Show() override;
 public:
     dungeonMatrix * currentDungeon;
     bool hasToUpdateView = false;
@@ -40,7 +41,7 @@ public:
     void Import();
 
     void Setup() override;
-    void Show() override;
+    void ShowAsWindow() override;
     void Update() override;
     void Shutdown() override;
 

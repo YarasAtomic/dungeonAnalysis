@@ -33,7 +33,7 @@ void DungeonView::Setup()
     camera.projection = CAMERA_PERSPECTIVE;
 }
 
-void DungeonView::Show()
+void DungeonView::ShowAsWindow()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::SetNextWindowSizeConstraints(ImVec2(400, 400), ImVec2((float)GetScreenWidth(), (float)GetScreenHeight()));
@@ -65,6 +65,9 @@ void DungeonView::Show()
     ImGui::End();
     
     ImGui::PopStyleVar();
+}
+
+void DungeonView::Show(){
 }
 
 void DungeonView::Update()

@@ -22,8 +22,7 @@ void AlgorithmConfig::GetHelp(){
 
 void AlgorithmConfig::Setup(){};
 
-void AlgorithmConfig::Show(){
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+void AlgorithmConfig::ShowAsWindow(){
     ImGui::SetNextWindowSizeConstraints(ImVec2(200, 200), ImVec2((float)GetScreenWidth(), (float)GetScreenHeight()));
     std::string windowName = filename + " Generation Settings";
     if (ImGui::Begin(windowName.c_str(), &open)){        
@@ -46,6 +45,7 @@ void AlgorithmConfig::Show(){
                     ss << "##" << options[i].text;
                     // const char * label = std::string("##" + options[i].text).c_str();
                     // const char * label = "##label";
+                    ImGui::SetNextItemWidth(-40.0);
                     ImGui::InputText((ss.str().c_str()),options[i].value,IM_ARRAYSIZE(options[i].value));
                     break;
                 }
@@ -66,8 +66,10 @@ void AlgorithmConfig::Show(){
     }
 
     ImGui::End();
-    ImGui::PopStyleVar();
-};
+}
+
+void AlgorithmConfig::Show(){
+}
 
 void AlgorithmConfig::ThreadRunAlgorithm(AlgorithmConfig & config){
     config.RunAlgorithm();

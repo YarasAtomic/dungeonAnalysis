@@ -32,8 +32,7 @@ void DungeonStat::Import(){
 
 void DungeonStat::Setup(){}
 
-void DungeonStat::Show(){
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+void DungeonStat::ShowAsWindow(){
     ImGui::SetNextWindowSizeConstraints(ImVec2(200, 200), ImVec2((float)GetScreenWidth(), (float)GetScreenHeight()));
     std::string windowName = dunname + " Stats";
     if (ImGui::Begin(windowName.c_str(), &open)){
@@ -69,7 +68,9 @@ void DungeonStat::Show(){
     }
 
     ImGui::End();
-    ImGui::PopStyleVar();
+}
+
+void DungeonStat::Show(){
 }
 
 void DungeonStat::Update(){

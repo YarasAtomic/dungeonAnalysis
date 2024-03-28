@@ -16,9 +16,11 @@ class AlgorithmList : public DocumentWindow{
     bool hasToUpdate = false;
 
     void Reload();
+protected:
+    void Show() override;
 public:
     void Setup() override;
-    void Show() override;
+    void ShowAsWindow() override;
     void Update() override;
     void Shutdown() override;
 
