@@ -52,6 +52,8 @@ public:
     // Texture2D gridTexture = { 0 };
     void Setup() override;
     void ShowAsWindow() override;
+    void ShowAsChild() override;
+    // void ShowAsTabItem() override;
     void Update() override;
     void Shutdown() override;
 };

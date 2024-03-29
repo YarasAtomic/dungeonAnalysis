@@ -42,10 +42,13 @@ public:
 
     void Setup() override;
     void ShowAsWindow() override;
+    void ShowAsChild() override;
+    // void ShowAsTabItem() override;
     void Update() override;
     void Shutdown() override;
 
     void UpdateViews(std::vector<DungeonView*> &);
+    void UpdateView(DungeonView * &);
 
     Vector3 GetEnd();
     Vector3 GetStart();

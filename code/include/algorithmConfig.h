@@ -44,10 +44,13 @@ public:
     AlgorithmConfig(std::string name,std::string path,std::string out);
     void Setup() override;
     void ShowAsWindow() override;
+    void ShowAsChild() override;
+    // void ShowAsTabItem() override;
     void Update() override;
     void Shutdown() override;
 
     void UpdateStats(std::vector<DungeonStat*> &);
+    void UpdateStats(DungeonStat * &);
 
     std::string GetName();
 

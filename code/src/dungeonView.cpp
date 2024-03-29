@@ -37,37 +37,43 @@ void DungeonView::ShowAsWindow()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::SetNextWindowSizeConstraints(ImVec2(400, 400), ImVec2((float)GetScreenWidth(), (float)GetScreenHeight()));
-    if (ImGui::Begin(std::string(name + " 3D View").c_str(), &open, ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoBackground))
-    {
-        focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
-
-        ImVec2 content = ImGui::GetContentRegionAvail();
-        ImVec2 mouse = ImGui::GetMousePos();
-        ImVec2 windowP = ImGui::GetWindowPos();
-        ImVec2 windowS = ImGui::GetWindowSize();
-        mousePos.x = mouse.x - windowP.x - windowS.x + content.x;
-        mousePos.y = mouse.y - windowP.y - windowS.y + content.y;
-        
-        int oldScreenWidth = screenWidth;
-        int oldScreenHeight = screenHeight;
-        // screenWidth = ImGui::GetWindowWidth();
-        // screenHeight = ImGui::GetWindowHeight();
-        screenWidth = content.x;
-        screenHeight = content.y;
-        
-
-        resized = oldScreenWidth != screenWidth || oldScreenHeight != screenHeight;
-
-        // draw the view
-        if(IsRenderTextureReady(viewTexture)) rlImGuiImageRenderTextureFit(&viewTexture, true);
-        
+    if (ImGui::Begin(std::string(name + " 3D View").c_str(), &open, ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoBackground)){
+        Show();
     }
     ImGui::End();
     
     ImGui::PopStyleVar();
 }
 
+void DungeonView::ShowAsChild()
+{    
+    if (ImGui::BeginChild(std::string(name + " 3D View").c_str(),ImVec2(0,-(float)GetScreenHeight()/2), ImGuiChildFlags_ResizeY,ImGuiWindowFlags_None)){
+        Show();
+    }
+    ImGui::EndChild();
+}
+
 void DungeonView::Show(){
+    focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
+
+    ImVec2 content = ImGui::GetContentRegionAvail();
+    ImVec2 mouse = ImGui::GetMousePos();
+    ImVec2 windowP = ImGui::GetWindowPos();
+    ImVec2 windowS = ImGui::GetWindowSize();
+    mousePos.x = mouse.x - windowP.x - windowS.x + content.x;
+    mousePos.y = mouse.y - windowP.y - windowS.y + content.y;
+    
+    int oldScreenWidth = screenWidth;
+    int oldScreenHeight = screenHeight;
+    // screenWidth = ImGui::GetWindowWidth();
+    // screenHeight = ImGui::GetWindowHeight();
+    screenWidth = content.x;
+    screenHeight = content.y;
+    
+    resized = oldScreenWidth != screenWidth || oldScreenHeight != screenHeight;
+
+    // draw the view
+    if(IsRenderTextureReady(viewTexture)) rlImGuiImageRenderTextureFit(&viewTexture, true);
 }
 
 void DungeonView::Update()

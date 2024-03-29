@@ -1,9 +1,11 @@
 #include <raylib.h>
 #include <iostream>
+#include "dungeonTab.h"
 #include "algorithmList.h"
 #include "dungeonView.h"
 #include "dungeonStat.h"
 #include "dungeonList.h"
+#include "algorithmConfig.h"
 
 // #include "rlImGui.h"
 
@@ -11,9 +13,8 @@ void playerModeUpdate(dungeonMatrix *,Vector3,Vector2&,Vector3&);
 
 AlgorithmList algorithmList;
 DungeonList dungeonList;
-std::vector<AlgorithmConfig*> algorithConfig;
-std::vector<DungeonView*> dungeonView;
-std::vector<DungeonStat*> dungeonStat;
+
+std::vector<DungeonTab*> dungeonTabs;
 
 bool quit = false;
 bool imGuiDemoOpen = false;
@@ -33,8 +34,8 @@ void DoMainMenu()
 		if (ImGui::BeginMenu("Window"))
 		{
 			ImGui::MenuItem("ImGui Demo", nullptr, &imGuiDemoOpen);
-			ImGui::MenuItem("Algorithm List", nullptr, &algorithmList.open);
-            ImGui::MenuItem("Dungeon List", nullptr, &dungeonList.open);
+			// ImGui::MenuItem("Algorithm List", nullptr, &algorithmList.open);
+            // ImGui::MenuItem("Dungeon List", nullptr, &dungeonList.open);
 
 			ImGui::EndMenu();
 		}
@@ -53,6 +54,8 @@ void raylib()
     rlImGuiSetup(true);
 	ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+
     // Style setup
     ImGuiStyle& style = ImGui::GetStyle();
     style.WindowPadding.x = 6;
@@ -66,25 +69,13 @@ void raylib()
     dungeonList.Setup();
     dungeonList.open = true;
 
-    while (!WindowShouldClose()||IsKeyDown(KEY_ESCAPE)||quit) 
+    while ((!WindowShouldClose()||IsKeyDown(KEY_ESCAPE))&&!quit) 
     {
         algorithmList.Update();
         dungeonList.Update();
 
-        for(int i = 0; i < algorithConfig.size();i++){
-            algorithConfig[i]->Update();
-            algorithConfig[i]->UpdateStats(dungeonStat);
-        }
-        for(int i = 0; i < dungeonStat.size();i++){
-            dungeonStat[i]->Update();
-            dungeonStat[i]->UpdateViews(dungeonView);
-        }
-        for(int i = 0; i < dungeonView.size();i++){
-            dungeonView[i]->Update();
-        }
-
-        algorithmList.UpdateAlgorithms(&algorithConfig);
-        dungeonList.UpdateDungeons(&dungeonStat);
+        algorithmList.UpdateDungeonTabs(&dungeonTabs);
+        dungeonList.UpdateDungeonTabs(&dungeonTabs);
 
         BeginDrawing();
         ClearBackground(DARKGRAY);
@@ -93,26 +84,51 @@ void raylib()
 
         DoMainMenu();
 
+        // Updates -------
+        auto it = dungeonTabs.begin();
+        for (; it != dungeonTabs.end();){
+            if((*it)->open){
+                (*it)->Update();
+                ++it;
+            }else{
+                (*it)->Shutdown();
+                it = dungeonTabs.erase(it);
+            }
+        }
+
+        // Demo -------
+
         if(imGuiDemoOpen)
             ImGui::ShowDemoWindow(&imGuiDemoOpen);
 
-        if(algorithmList.open)
-            algorithmList.ShowAsWindow();
-            
-        if(dungeonList.open)
-            dungeonList.ShowAsWindow();
+        // Show --------
 
-        for(int i = 0; i < algorithConfig.size();i++){
-            if(algorithConfig[i]->open) algorithConfig[i]->ShowAsWindow();
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings;
+        
+        ImGui::SetNextWindowPos(viewport->WorkPos);
+        ImGui::SetNextWindowSize(viewport->WorkSize);
+        ImGui::Begin("##main",0, windowFlags);
+        if(ImGui::BeginChild("Side Panel",ImVec2(200, 0), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX)){
+            algorithmList.ShowAsChild();
+            dungeonList.ShowAsChild();
+            ImGui::EndChild();
         }
 
-        for(int i = 0; i < dungeonStat.size();i++){
-            if(dungeonStat[i]->open) dungeonStat[i]->ShowAsWindow();
+        ImGui::SameLine();
+        if(ImGui::BeginChild("Dungeon panel",ImVec2(0, 0), ImGuiChildFlags_Border)){
+            if(ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None|ImGuiTabBarFlags_Reorderable)){
+                for(int i = 0; i < dungeonTabs.size();i++){
+                    
+                    if (ImGui::BeginTabItem(dungeonTabs[i]->GetName().c_str(),&dungeonTabs[i]->open)){
+                        dungeonTabs[i]->ShowAsChild();
+                        ImGui::EndTabItem();
+                    }
+                }
+                ImGui::EndTabBar();
+            }
+            ImGui::EndChild();
         }
-
-        for(int i = 0; i < dungeonView.size();i++){
-            if(dungeonView[i]->open) dungeonView[i]->ShowAsWindow();
-        }
+        ImGui::End();
 
         rlImGuiEnd();
 
@@ -122,11 +138,10 @@ void raylib()
     std::cout << "CLOSING" <<std::endl;
 
     rlImGuiShutdown();
-    for(int i = 0; i < dungeonView.size();i++){
-        dungeonView[i]->Shutdown();
-    }
-    for(int i = 0; i < algorithConfig.size();i++){
-        algorithConfig[i]->Shutdown();
+
+
+    for(int i = 0; i < dungeonTabs.size();i++){
+        dungeonTabs[i]->Shutdown();
     }
 
     // Close

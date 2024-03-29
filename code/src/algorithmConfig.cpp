@@ -26,49 +26,59 @@ void AlgorithmConfig::ShowAsWindow(){
     ImGui::SetNextWindowSizeConstraints(ImVec2(200, 200), ImVec2((float)GetScreenWidth(), (float)GetScreenHeight()));
     std::string windowName = filename + " Generation Settings";
     if (ImGui::Begin(windowName.c_str(), &open)){        
-        if(configGenerated){
-            for(int i = 0; i < options.size(); i++){
-                const char * text = options[i].text.c_str();
-                
-                switch(options[i].type){
-                case HelpSectionType::Title:
-                    ImGui::TextUnformatted(text);
-                    break;
-                case HelpSectionType::Desc:
-                    ImGui::SameLine();
-                    HelpMarker(text);
-                    break;
-                case HelpSectionType::Option:
-                    ImGui::TextUnformatted(text);
-                    ImGui::SameLine();
-                    std::stringstream ss;
-                    ss << "##" << options[i].text;
-                    // const char * label = std::string("##" + options[i].text).c_str();
-                    // const char * label = "##label";
-                    ImGui::SetNextItemWidth(-40.0);
-                    ImGui::InputText((ss.str().c_str()),options[i].value,IM_ARRAYSIZE(options[i].value));
-                    break;
-                }
-            }
-        }
-        ImGui::Checkbox("Resolve",&hasToGeneratePath);
-
-        ImGui::BeginDisabled(runningAlgorithm);
-        if(ImGui::Button("Run")){
-            runAlgorithm = true;
-            std::cout << "Running " << filename << std::endl;
-        }
-        ImGui::EndDisabled();
-        if(runningAlgorithm){
-            ImGui::SameLine();
-            ImGui::Text("Running...");
-        }
+        Show();
     }
 
     ImGui::End();
 }
 
+void AlgorithmConfig::ShowAsChild(){
+    std::string windowName = filename + " Generation Settings";
+    if (ImGui::BeginChild(windowName.c_str(),ImVec2(0, 0), ImGuiChildFlags_None/* | ImGuiChildFlags_ResizeX*/,ImGuiWindowFlags_None))
+    {
+        Show();
+    }
+    ImGui::EndChild();
+}
+
 void AlgorithmConfig::Show(){
+    if(configGenerated){
+        for(int i = 0; i < options.size(); i++){
+            const char * text = options[i].text.c_str();
+            
+            switch(options[i].type){
+            case HelpSectionType::Title:
+                ImGui::TextUnformatted(text);
+                break;
+            case HelpSectionType::Desc:
+                ImGui::SameLine();
+                HelpMarker(text);
+                break;
+            case HelpSectionType::Option:
+                ImGui::TextUnformatted(text);
+                ImGui::SameLine();
+                std::stringstream ss;
+                ss << "##" << options[i].text;
+                // const char * label = std::string("##" + options[i].text).c_str();
+                // const char * label = "##label";
+                ImGui::SetNextItemWidth(-40.0);
+                ImGui::InputText((ss.str().c_str()),options[i].value,IM_ARRAYSIZE(options[i].value));
+                break;
+            }
+        }
+    }
+    ImGui::Checkbox("Resolve",&hasToGeneratePath);
+
+    ImGui::BeginDisabled(runningAlgorithm);
+    if(ImGui::Button("Run")){
+        runAlgorithm = true;
+        std::cout << "Running " << filename << std::endl;
+    }
+    ImGui::EndDisabled();
+    if(runningAlgorithm){
+        ImGui::SameLine();
+        ImGui::Text("Running...");
+    }
 }
 
 void AlgorithmConfig::ThreadRunAlgorithm(AlgorithmConfig & config){
@@ -88,7 +98,6 @@ void TestWait(){
 
 void AlgorithmConfig::Update(){
     if(!open) return;
-
     if(!configGenerated) GetHelp();
     if(runAlgorithm&&!runningAlgorithm){
         runAlgorithm = false;
@@ -247,6 +256,22 @@ void AlgorithmConfig::UpdateStats(std::vector<DungeonStat*> & stats){
         if(statWindow == nullptr){
             statWindow = new DungeonStat(outdirpath+"/temp.dun",filename,this,hasToGeneratePath);
             stats.push_back(statWindow);
+            statWindow->Setup();
+            
+        }
+        statWindow->Import();
+        statWindow->hasToGeneratePath = hasToGeneratePath;
+        statWindow->dungeonTime = dungeonTime;
+        hasToUpdateStats = false;
+        statWindow->open = true;
+    }
+}
+
+void AlgorithmConfig::UpdateStats(DungeonStat * & stats){
+    if(hasToUpdateStats){
+        if(statWindow == nullptr){
+            statWindow = new DungeonStat(outdirpath+"/temp.dun",filename,this,hasToGeneratePath);
+            stats = statWindow;
             statWindow->Setup();
             
         }

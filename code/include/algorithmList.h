@@ -5,7 +5,8 @@
 #include <vector>
 #include <filesystem>
 #include <iostream>
-#include "algorithmConfig.h"
+class DungeonTab;
+class AlgorithmConfig;
 
 class AlgorithmList : public DocumentWindow{
     std::string dir = "./algorithm";
@@ -21,10 +22,13 @@ protected:
 public:
     void Setup() override;
     void ShowAsWindow() override;
+    void ShowAsChild() override;
+    // void ShowAsTabItem() override;
     void Update() override;
     void Shutdown() override;
 
     void UpdateAlgorithms(std::vector<AlgorithmConfig *> *);
+    void UpdateDungeonTabs(std::vector<DungeonTab *> *);
 };
 
 #endif

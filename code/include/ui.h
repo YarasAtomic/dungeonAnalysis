@@ -24,6 +24,8 @@ public:
 	virtual void Setup() = 0;
 	virtual void Shutdown() = 0;
 	virtual void ShowAsWindow() = 0;
+    virtual void ShowAsChild() = 0;
+    // virtual void ShowAsTabItem() = 0;
 	virtual void Update() = 0;
 
 	bool focused = false;

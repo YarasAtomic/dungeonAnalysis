@@ -1,4 +1,6 @@
 #include "dungeonList.h"
+#include "dungeonStat.h"
+#include "dungeonTab.h"
 
 void DungeonList::ShowAsWindow()
 {
@@ -7,27 +9,39 @@ void DungeonList::ShowAsWindow()
     
     if (ImGui::Begin("Dungeon list", &open, ImGuiWindowFlags_NoScrollbar))
     {
-        if(ImGui::Button("Reload")) Reload();
-        ImGui::Spacing();
-        ImGui::BeginChild("##child::dungeons", ImVec2(0, 260), ImGuiChildFlags_Border,ImGuiWindowFlags_None);
-        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign,ImVec2(0,0.5));
-        if (ImGui::BeginTable("##table::dungeons", 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
-        {
-            ImGui::TableNextColumn();
-            for(int i = 0; i < dungeons.size();i++){
-                if(ImGui::Button(dungeons[i].c_str(), ImVec2(-FLT_MIN, 0.0f)))
-                    selected = dungeons[i];
-            }
-            ImGui::EndTable();
-        }
-        ImGui::PopStyleVar();
-        ImGui::EndChild();
-
+        Show();
     }
     ImGui::End();
 }
 
+void DungeonList::ShowAsChild()
+{
+    ImGui::TextUnformatted("Dungeon list");
+    ImGui::Separator();
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0.0f, ImGui::GetTextLineHeightWithSpacing() * 1), ImVec2(FLT_MAX, ImGui::GetTextLineHeightWithSpacing() * 10));
+    if (ImGui::BeginChild("Dungeon list",ImVec2(-FLT_MIN, 0.0f), ImGuiChildFlags_None,ImGuiWindowFlags_None))
+    {
+        Show();
+    }
+    ImGui::EndChild();
+}
+
 void DungeonList::Show(){
+    if(ImGui::Button("Reload")) Reload();
+    ImGui::Spacing();
+    ImGui::BeginChild("##child::dungeons", ImVec2(0, 0), ImGuiChildFlags_Border,ImGuiWindowFlags_None);
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign,ImVec2(0,0.5));
+    if (ImGui::BeginTable("##table::dungeons", 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
+    {
+        ImGui::TableNextColumn();
+        for(int i = 0; i < dungeons.size();i++){
+            if(ImGui::Button(dungeons[i].c_str(), ImVec2(-FLT_MIN, 0.0f)))
+                selected = dungeons[i];
+        }
+        ImGui::EndTable();
+    }
+    ImGui::PopStyleVar();
+    ImGui::EndChild();
 }
 
 void DungeonList::Setup(){
@@ -67,6 +81,25 @@ void DungeonList::UpdateDungeons(std::vector<DungeonStat*> * dungeons){
             dungeons->push_back(new DungeonStat(dir+"/"+selected,selected,false,false));
             (*dungeons)[dungeons->size()-1]->open = true;
             (*dungeons)[dungeons->size()-1]->Import();
+        }else{
+            (*dungeons)[index]->open = true;
+        }
+        selected = "";
+    }
+}
+
+void DungeonList::UpdateDungeonTabs(std::vector<DungeonTab*> * dungeons){
+    if(selected!=""){
+        std::cout << "Selected " << selected << std::endl;
+        int index = -1;
+        for(int i = 0 ; i < dungeons->size();i++){
+            if((*dungeons)[i]->GetDungeonName()==selected) index = i;
+        }
+
+        if(index == -1){
+            dungeons->push_back(new DungeonTab());
+            (*dungeons)[dungeons->size()-1]->open = true;
+            (*dungeons)[dungeons->size()-1]->SetDungeon(dir+"/"+selected,selected);
         }else{
             (*dungeons)[index]->open = true;
         }

@@ -36,41 +36,48 @@ void DungeonStat::ShowAsWindow(){
     ImGui::SetNextWindowSizeConstraints(ImVec2(200, 200), ImVec2((float)GetScreenWidth(), (float)GetScreenHeight()));
     std::string windowName = dunname + " Stats";
     if (ImGui::Begin(windowName.c_str(), &open)){
-        if(statsGenerated){
-
-            ImGui::Text("Wall count:\t%i",wallCount);
-            ImGui::Text("Floor count:\t%i",floorCount);
-            ImGui::Text("Linear distance S/G:\t%f",linearDistanceStartGoal);
-            if(isGenerated){
-                ImGui::Text("Generation time:\t%fs",dungeonTime);
-            }
-            if(pathGenerated)
-                ImGui::Text("Step count S/G:\t%i",dungeonPath.GetLength());
-        }
-
-        
-
-        if(ImGui::Button("View")){
-            hasToUpdateView = true;
-        }
-        ImGui::BeginDisabled(pathGenerated);
-        
-        if(ImGui::Button("Resolve")){
-            hasToGeneratePath = true;
-        }
-        
-        ImGui::EndDisabled();
-        ImGui::BeginDisabled(!pathGenerated);
-        ImGui::SameLine();
-        ImGui::Checkbox("Show path",&showPath);
-        ImGui::EndDisabled();
-        ImGui::IsItemActive();
+        Show();
     }
 
     ImGui::End();
 }
 
+void DungeonStat::ShowAsChild()
+{
+    std::string windowName = dunname + " Stats";
+    if (ImGui::BeginChild(windowName.c_str(),ImVec2(0, 0), ImGuiChildFlags_None,ImGuiWindowFlags_None)){
+        Show();
+    }
+    ImGui::EndChild();
+}
+
 void DungeonStat::Show(){
+    if(statsGenerated){
+        ImGui::Text("Wall count:\t%i",wallCount);
+        ImGui::Text("Floor count:\t%i",floorCount);
+        ImGui::Text("Linear distance S/G:\t%f",linearDistanceStartGoal);
+        if(isGenerated){
+            ImGui::Text("Generation time:\t%fs",dungeonTime);
+        }
+        if(pathGenerated)
+            ImGui::Text("Step count S/G:\t%i",dungeonPath.GetLength());
+    }
+
+    if(ImGui::Button("View")){
+        hasToUpdateView = true;
+    }
+    ImGui::BeginDisabled(pathGenerated);
+    
+    if(ImGui::Button("Resolve")){
+        hasToGeneratePath = true;
+    }
+    
+    ImGui::EndDisabled();
+    ImGui::BeginDisabled(!pathGenerated);
+    ImGui::SameLine();
+    ImGui::Checkbox("Show path",&showPath);
+    ImGui::EndDisabled();
+    ImGui::IsItemActive();
 }
 
 void DungeonStat::Update(){
@@ -93,6 +100,17 @@ void DungeonStat::UpdateViews(std::vector<DungeonView*> & views){
         if(view == nullptr){
             view = new DungeonView(dunname,this);
             views.push_back(view);
+            view->Setup();
+        }
+        view->open = true;
+    }
+}
+
+void DungeonStat::UpdateView(DungeonView* & view){
+    if(hasToUpdateView){
+        if(this->view == nullptr){
+            this->view = new DungeonView(dunname,this);
+            view = this->view;
             view->Setup();
         }
         view->open = true;
