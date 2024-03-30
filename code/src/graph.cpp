@@ -83,25 +83,25 @@ bool DunState::TakeAction(Action action,dungeonMatrix * dungeon, DunState & newS
     newState = *this;
     switch(action){
     case Action::MOVE_FRONT:
-        // std::cout << "    Trying to move z++" << std::endl;
+        std::cout << "    Trying to move z++" << std::endl;
         if(agentPos.z+1>=dungeon->size_z) return false;
         if(dungeon->data[agentPos.x][agentPos.y][agentPos.z+1]&DUN_PXY_WALL) return false;
         newState.agentPos.z++;
         break;
     case Action::MOVE_BACK:
-        // std::cout << "    Trying to move z--" << std::endl;
+        std::cout << "    Trying to move z--" << std::endl;
         if(agentPos.z<=0) return false;
         if(dungeon->data[agentPos.x][agentPos.y][agentPos.z]&DUN_PXY_WALL) return false;
         newState.agentPos.z--;
         break;
     case Action::MOVE_LEFT:
-        // std::cout << "    Trying to move x--" << std::endl;
+        std::cout << "    Trying to move x--" << std::endl;
         if(agentPos.x<=0) return false;
         if(dungeon->data[agentPos.x][agentPos.y][agentPos.z]&DUN_PYZ_WALL) return false;
         newState.agentPos.x--;
         break;
     case Action::MOVE_RIGHT:
-        // std::cout << "    Trying to move x++" << std::endl;
+        std::cout << "    Trying to move x++" << std::endl;
         if(agentPos.x+1>=dungeon->size_x) return false;
         if(dungeon->data[agentPos.x+1][agentPos.y][agentPos.z]&DUN_PYZ_WALL) return false;
         newState.agentPos.x++;
@@ -113,8 +113,6 @@ bool DunState::TakeAction(Action action,dungeonMatrix * dungeon, DunState & newS
 Pathfinder::Pathfinder(dungeonMatrix * dungeon){
     this->dungeon = dungeon;
 }
-
-
 
 DungeonPath Pathfinder::AStar(Vector3Int start,Vector3Int end){
     DungeonPath path;
@@ -157,6 +155,7 @@ DungeonPath Pathfinder::AStar(Vector3Int start,Vector3Int end){
             found = true;
             // std::cout << "Sequence length " << current.sequence.size() << std::endl;
             path.FromSequence(start,current.sequence);
+            path.valid = true;
             return path;
         }
 

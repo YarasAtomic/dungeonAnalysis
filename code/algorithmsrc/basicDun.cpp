@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <stdlib.h> 
+#include <random>
 
 const int HALL_ID = 9999;
 
@@ -369,8 +370,9 @@ int main(int args,char ** argv)
     opts.minHallLength = 10;
     opts.maxHallLength = 15;
 
-    srand(time(NULL));
-    int seed = rand();
+    std::random_device rd;
+
+    int seed = rd();
     std::string output = "a.dun";
 
     auto findWidth = argMap.find("width");

@@ -35,16 +35,23 @@ class DungeonView : public DocumentWindow{
 
     DungeonStat * stats = nullptr;
     
-    
     void enterPlayMode();
 
     void playerModeUpdate(dungeonMatrix * dungeon,Vector3 dungeonPos,Vector3 & playerPos);
 
     void InteractionModeUpdate(Vector3 & playerPos);
+    void InteractionModePasiveUpdate();
 protected:
     void Show() override;
 public:
     std::string name;
+    bool hidden = true;
+
+    bool hasToFocusGoal = false;
+    bool hasToFocusStart = false;
+    bool hasToRestartView = false;
+
+    bool showPath = true;
 
     DungeonView(std::string name,DungeonStat * stats);
 
@@ -56,6 +63,8 @@ public:
     // void ShowAsTabItem() override;
     void Update() override;
     void Shutdown() override;
+
+    void SetCameraDefault();
 };
 
 #endif

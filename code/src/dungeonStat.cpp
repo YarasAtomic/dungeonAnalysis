@@ -11,7 +11,8 @@ DungeonStat::DungeonStat(std::string path,std::string dunname,bool isGenerated,b
     this->hasToGeneratePath = hasToGeneratePath;
 }
 
-void DungeonStat::Import(){
+void DungeonStat::Import(bool batchImport){
+    batch = batchImport;
     std::cout << "importing: " << dunpath << std::endl;
     bool dungeonImported = file2Dun(&currentDungeon,dunpath);
 
@@ -23,7 +24,7 @@ void DungeonStat::Import(){
         std::cout << "Size Y: " << currentDungeon->size_y << std::endl;
         std::cout << "Size Z: " << currentDungeon->size_z << std::endl;
     }
-    if((view!=nullptr&&view->open)||view==nullptr){ // Create and open a new view if it doesnt exist, or update if its open
+    if(((view!=nullptr&&view->open)||view==nullptr)/*&&!batchImport*/){ // Create and open a new view if it doesnt exist, or update if its open
         hasToUpdateView = true;
     }
     statsGenerated = false;
@@ -53,31 +54,55 @@ void DungeonStat::ShowAsChild()
 
 void DungeonStat::Show(){
     if(statsGenerated){
-        ImGui::Text("Wall count:\t%i",wallCount);
-        ImGui::Text("Floor count:\t%i",floorCount);
-        ImGui::Text("Linear distance S/G:\t%f",linearDistanceStartGoal);
-        if(isGenerated){
-            ImGui::Text("Generation time:\t%fs",dungeonTime);
+        if(batch){
+            int baseColumns = 5;
+            ImGui::BeginTable("statsTable",baseColumns,ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Resizable);
+            ImGui::TableSetupColumn("Wall count");
+            ImGui::TableSetupColumn("Floor count");
+            ImGui::TableSetupColumn("Distance S/G");
+            ImGui::TableSetupColumn("Generation time (seconds)");
+            ImGui::TableSetupColumn("Steps S/G");
+            ImGui::TableHeadersRow();
+            
+            for(int i = 0; i < statsBatch.size();i++){
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("%i",statsBatch[i]->wallCount);
+                ImGui::TableNextColumn();
+                ImGui::Text("%i",statsBatch[i]->floorCount);
+                ImGui::TableNextColumn();
+                ImGui::Text("%f",statsBatch[i]->linearDistanceStartGoal);
+                ImGui::TableNextColumn();
+                ImGui::Text("%f",statsBatch[i]->generationTime);
+                ImGui::TableNextColumn();
+                if(statsBatch[i]->pathGenerated){
+                    ImGui::Text("%i",statsBatch[i]->dungeonPathLength);
+                }else{
+                    ImGui::Text("???");
+                }
+            }
+            ImGui::EndTable();
+        }else{
+            ImGui::Text("Wall count:\t%i",wallCount);
+            ImGui::Text("Floor count:\t%i",floorCount);
+            ImGui::Text("Linear distance S/G:\t%f",linearDistanceStartGoal);
+            if(isGenerated){
+                ImGui::Text("Generation time:\t%fs",dungeonTime);
+            }
+            if(pathGenerated)
+                ImGui::Text("Step count S/G:\t%i",dungeonPath.GetLength());
         }
-        if(pathGenerated)
-            ImGui::Text("Step count S/G:\t%i",dungeonPath.GetLength());
+
+        ImGui::BeginDisabled(pathGenerated);
+        
+        if(ImGui::Button("Resolve")){
+            hasToGeneratePath = true;
+        }
+        ImGui::EndDisabled();
+    
     }
 
-    if(ImGui::Button("View")){
-        hasToUpdateView = true;
-    }
-    ImGui::BeginDisabled(pathGenerated);
-    
-    if(ImGui::Button("Resolve")){
-        hasToGeneratePath = true;
-    }
-    
-    ImGui::EndDisabled();
-    ImGui::BeginDisabled(!pathGenerated);
-    ImGui::SameLine();
-    ImGui::Checkbox("Show path",&showPath);
-    ImGui::EndDisabled();
-    ImGui::IsItemActive();
+
 }
 
 void DungeonStat::Update(){
@@ -93,6 +118,7 @@ void DungeonStat::Update(){
 
 void DungeonStat::Shutdown(){
     freeDungeonMatrix(&currentDungeon);
+    ClearBatchData();
 }
 
 void DungeonStat::UpdateViews(std::vector<DungeonView*> & views){
@@ -137,6 +163,17 @@ void DungeonStat::GenerateStats(){
     end = {(float)currentDungeon->end_x,(float)currentDungeon->end_y,(float)currentDungeon->end_z};
     linearDistanceStartGoal = Vector3Length( Vector3Subtract(end,start));
 
+    if(batch){
+        Stats * newStats = new Stats;
+        newStats->wallCount = wallCount;
+        newStats->floorCount = floorCount;
+        newStats->linearDistanceStartGoal = linearDistanceStartGoal;
+        newStats->start = start;
+        newStats->end = end;
+        newStats->generationTime = dungeonTime;
+        statsBatch.push_back(newStats);
+    }
+
     statsGenerated = true;
 }
 
@@ -151,6 +188,13 @@ void DungeonStat::GeneratePath(){
     hasToGeneratePath = false;
     pathGenerated = true;
     generatingPath = false;
+
+    if(batch){
+        int length = dungeonPath.valid ? dungeonPath.GetLength() : -1;
+        statsBatch.back()->dungeonPathLength = length;
+        statsBatch.back()->pathGenerated = pathGenerated && length >= 0;
+
+    }
 }
 
 Vector3 DungeonStat::GetEnd(){
@@ -162,9 +206,20 @@ Vector3 DungeonStat::GetStart(){
 }
 
 void DungeonStat::DrawPath(Vector3 pos,Color color,float size,bool drawLast){
-    if(showPath&&pathGenerated) dungeonPath.Draw(pos,color,size,drawLast);
+    if(pathGenerated) dungeonPath.Draw(pos,color,size,drawLast);
+}
+
+bool DungeonStat::IsPathGenerated(){
+    return pathGenerated;
 }
 
 std::string DungeonStat::GetName(){
     return dunname;
+}
+
+void DungeonStat::ClearBatchData(){
+    for(int i = 0; i < statsBatch.size(); i++){
+        delete statsBatch[i];
+    }
+    statsBatch.clear();
 }

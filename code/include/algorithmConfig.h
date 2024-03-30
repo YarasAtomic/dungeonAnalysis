@@ -21,7 +21,8 @@ class AlgorithmConfig : public DocumentWindow{
     std::string outdirpath;
     std::vector<HelpSection> options;
     bool configGenerated = false;
-    bool runAlgorithm = false;
+    // bool runAlgorithm = false;
+    int pendingRuns = 0;
     bool runningAlgorithm = false;
     DungeonStat* statWindow = nullptr;
     std::jthread * algorithmThread;
@@ -29,9 +30,13 @@ class AlgorithmConfig : public DocumentWindow{
     void GetHelp();
     void RunAlgorithm();
     void GenerateConfig(std::string help);
+    
     std::string GetOptionName(std::string string);
     std::string GetOptionDesc(std::string string);
 
+    int batchRun = 10;
+    bool runModeBatch = false;
+    bool hasToClearStats = false;
     bool hasToGeneratePath = false;
 
     double dungeonTime = 0;
@@ -51,6 +56,7 @@ public:
 
     void UpdateStats(std::vector<DungeonStat*> &);
     void UpdateStats(DungeonStat * &);
+    DungeonStat* SetUpStats();
 
     std::string GetName();
 

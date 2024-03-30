@@ -12,6 +12,7 @@ enum Action{
 class DungeonPath{
     std::vector<Vector3Int> steps;
 public:
+    bool valid = false;
     void FromSequence(Vector3Int start,std::vector<Action> sequence);
     void Add(Vector3Int step);
     Vector3Int GetPos(int step);

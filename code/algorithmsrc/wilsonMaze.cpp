@@ -3,6 +3,7 @@
 #include <vector>
 #include <stdlib.h> 
 #include <set>
+#include <random>
 
 /**========================================================================
  * ?                                ABOUT
@@ -204,8 +205,8 @@ int main(int args,char ** argv)
     int width = 4;
     int depth = 4;
 
-    srand(time(NULL));
-    int seed = rand();
+    std::random_device rd;
+    int seed = rd();
     std::string output = "a.dun";
 
     auto findWidth = argMap.find("width");

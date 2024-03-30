@@ -70,14 +70,31 @@ void AlgorithmConfig::Show(){
     ImGui::Checkbox("Resolve",&hasToGeneratePath);
 
     ImGui::BeginDisabled(runningAlgorithm);
-    if(ImGui::Button("Run")){
-        runAlgorithm = true;
+    if(ImGui::Button("Run")&&pendingRuns==0&&!runningAlgorithm){
+        // runAlgorithm = true;
+        pendingRuns = 1;
+        runModeBatch = false;
         std::cout << "Running " << filename << std::endl;
     }
+    ImGui::SameLine();
+    if(ImGui::Button("Run batch")&&pendingRuns==0&&!runningAlgorithm){
+        // runAlgorithm = true;
+        pendingRuns = batchRun;
+        runModeBatch = true;
+        hasToClearStats = true;
+        std::cout << "Running " << filename << " in batch (" << batchRun << ")" << std::endl;
+    }
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(-40.0);
+    ImGui::InputInt("##runNumber",&batchRun,1,16);
+    if(batchRun < 1) batchRun = 1;
     ImGui::EndDisabled();
     if(runningAlgorithm){
-        ImGui::SameLine();
         ImGui::Text("Running...");
+        if(runModeBatch){
+            ImGui::SameLine();
+            ImGui::Text("\t%i/%i",batchRun-pendingRuns,batchRun);
+        }
     }
 }
 
@@ -99,8 +116,9 @@ void TestWait(){
 void AlgorithmConfig::Update(){
     if(!open) return;
     if(!configGenerated) GetHelp();
-    if(runAlgorithm&&!runningAlgorithm){
-        runAlgorithm = false;
+    if(pendingRuns>0&&!runningAlgorithm){
+        // runAlgorithm = false;
+        pendingRuns--;
         runningAlgorithm = true;
 
         // we cant pass a non-static method
@@ -251,15 +269,15 @@ void AlgorithmConfig::RunAlgorithm(){
     std::cout << "execution Time " << dungeonTime << " seconds" << std::endl;
 }
 
+//! this is utterly useless and i should remove it, also it doesnt work
 void AlgorithmConfig::UpdateStats(std::vector<DungeonStat*> & stats){
     if(hasToUpdateStats){
-        if(statWindow == nullptr){
-            statWindow = new DungeonStat(outdirpath+"/temp.dun",filename,this,hasToGeneratePath);
-            stats.push_back(statWindow);
-            statWindow->Setup();
-            
+        if(statWindow==nullptr) stats.push_back(SetUpStats());
+        if(hasToClearStats){
+            hasToClearStats = false;
+            statWindow->ClearBatchData();
         }
-        statWindow->Import();
+        statWindow->Import(runModeBatch);
         statWindow->hasToGeneratePath = hasToGeneratePath;
         statWindow->dungeonTime = dungeonTime;
         hasToUpdateStats = false;
@@ -269,18 +287,26 @@ void AlgorithmConfig::UpdateStats(std::vector<DungeonStat*> & stats){
 
 void AlgorithmConfig::UpdateStats(DungeonStat * & stats){
     if(hasToUpdateStats){
-        if(statWindow == nullptr){
-            statWindow = new DungeonStat(outdirpath+"/temp.dun",filename,this,hasToGeneratePath);
-            stats = statWindow;
-            statWindow->Setup();
-            
+        if(stats==nullptr) stats = SetUpStats();
+        if(hasToClearStats){
+            hasToClearStats = false;
+            stats->ClearBatchData();
         }
-        statWindow->Import();
+        statWindow->Import(runModeBatch);
         statWindow->hasToGeneratePath = hasToGeneratePath;
         statWindow->dungeonTime = dungeonTime;
         hasToUpdateStats = false;
         statWindow->open = true;
     }
+}
+
+
+DungeonStat* AlgorithmConfig::SetUpStats(){
+    if(statWindow == nullptr){
+        statWindow = new DungeonStat(outdirpath+"/temp.dun",filename,this,hasToGeneratePath);
+        statWindow->Setup();
+    }
+    return statWindow;
 }
 
 // void AlgorithmConfig::ImportDungeon(std::string file){

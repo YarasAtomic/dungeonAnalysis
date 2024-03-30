@@ -46,11 +46,26 @@ void DungeonView::ShowAsWindow()
 }
 
 void DungeonView::ShowAsChild()
-{    
-    if (ImGui::BeginChild(std::string(name + " 3D View").c_str(),ImVec2(0,-(float)GetScreenHeight()/2), ImGuiChildFlags_ResizeY,ImGuiWindowFlags_None)){
-        Show();
+{        
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
+    ImGui::Checkbox("Hide view",&hidden);
+    if(!hidden){
+        if(ImGui::Button("Restart view")) hasToRestartView = true;
+        ImGui::SameLine();
+        if(ImGui::Button("Focus start")) hasToFocusStart = true;
+        ImGui::SameLine();
+        if(ImGui::Button("Focus goal")) hasToFocusGoal = true;
+        ImGui::BeginDisabled(stats==nullptr||!stats->IsPathGenerated());
+        ImGui::SameLine();
+        ImGui::Checkbox("Show path",&showPath);
+        ImGui::EndDisabled();
+        if (ImGui::BeginChild(std::string(name + " 3D View").c_str(),ImVec2(0,-(float)GetScreenHeight()/2), ImGuiChildFlags_ResizeY,ImGuiWindowFlags_None)){
+            Show();
+        }
+        ImGui::EndChild();
     }
-    ImGui::EndChild();
+    
+    ImGui::PopStyleVar();
 }
 
 void DungeonView::Show(){
@@ -72,13 +87,16 @@ void DungeonView::Show(){
     
     resized = oldScreenWidth != screenWidth || oldScreenHeight != screenHeight;
 
+    if(hidden) return;
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    draw_list->AddRectFilled(windowP,ImVec2(windowP.x+windowS.x,windowP.y+windowS.y),IM_COL32_BLACK); //Hides the artifacting generated when resizing the texture
     // draw the view
     if(IsRenderTextureReady(viewTexture)) rlImGuiImageRenderTextureFit(&viewTexture, true);
 }
 
 void DungeonView::Update()
 {
-    if (!open)
+    if (!open||hidden)
         return;
 
     if (resized)
@@ -98,33 +116,37 @@ void DungeonView::Update()
             break;
         }
     }
-
+    switch(mode){
+    case player:
+        break;
+    case menu:
+        InteractionModePasiveUpdate();
+        break;
+    }
 
     //Generate model
     if(stats!=nullptr&&stats->hasToUpdateView){
         stats->hasToUpdateView = false;
+        if(stats->currentDungeon!=nullptr){
+            if(modelLoaded) {
+                // UnloadModel(dungeonModel);
+                for(auto model : dungeonModels) UnloadModel(model);
+            }
+            dungeonModels = modelVectorFromDungeon(stats->currentDungeon,{8,8,8});
+            // dungeonModel = LoadModelFromMesh(meshFromDungeon(stats->currentDungeon));
 
-        if(modelLoaded) {
-            // UnloadModel(dungeonModel);
-            for(auto model : dungeonModels) UnloadModel(model);
+            dungeonPos.x = - (float)stats->currentDungeon->size_x/2;
+            // dungeonPos.y = - (float)currentDungeon->size_y/2;
+            dungeonPos.y = 0;
+            dungeonPos.z = - (float)stats->currentDungeon->size_z/2;
+            for(auto model : dungeonModels) model.materials[0].shader = lightingShader;
+            // dungeonModel.materials[0].shader = lightingShader; //!
+
+            // Setting camera
+            SetCameraDefault();
+
+            modelLoaded = true;
         }
-        dungeonModels = modelVectorFromDungeon(stats->currentDungeon,{8,8,8});
-        // dungeonModel = LoadModelFromMesh(meshFromDungeon(stats->currentDungeon));
-
-        dungeonPos.x = - (float)stats->currentDungeon->size_x/2;
-        // dungeonPos.y = - (float)currentDungeon->size_y/2;
-        dungeonPos.y = 0;
-        dungeonPos.z = - (float)stats->currentDungeon->size_z/2;
-        for(auto model : dungeonModels) model.materials[0].shader = lightingShader;
-        // dungeonModel.materials[0].shader = lightingShader; //!
-
-        // Setting camera
-        cameraDistance = stats->currentDungeon->size_x+stats->currentDungeon->size_z;
-        cameraAngle = {DEG2RAD * 45,DEG2RAD * 45};
-        targetPos = {0,0,0};
-
-        modelLoaded = true;
-
     }
 
     // Render update
@@ -175,12 +197,12 @@ void DungeonView::Update()
     EndMode3D();
 
 
-    if(mode == player){
-        DrawText("Press escape to exit Player mode",10,10,20,WHITE);
-    }else{
-        DrawText("Interact mode",10,10,15,SKYBLUE);
-        // menuModeButtons.draw(screenWidth,screenHeight);
-    }
+    // if(mode == player){
+    //     DrawText("Press escape to exit Player mode",10,10,20,WHITE);
+    // }else{
+    //     DrawText("Interact mode",10,10,15,SKYBLUE);
+    //     // menuModeButtons.draw(screenWidth,screenHeight);
+    // }
 
     EndTextureMode();
 
@@ -266,6 +288,23 @@ void DungeonView::playerModeUpdate(dungeonMatrix * dungeon,Vector3 dungeonPos,Ve
     playerPos = Vector3Sum(playerPos,movement);
 }
 
+void DungeonView::InteractionModePasiveUpdate(){
+    if(hasToFocusStart){
+        hasToFocusStart = false;
+        targetPos = Vector3Sum(dungeonPos,stats->GetStart());
+        cameraDistance = 15;
+    }
+    if(hasToFocusGoal){
+        hasToFocusGoal = false;
+        targetPos = Vector3Sum(dungeonPos,stats->GetEnd());
+        cameraDistance = 15;
+    }
+    if(hasToRestartView){
+        hasToRestartView = false;
+        SetCameraDefault();
+    }
+}
+
 void DungeonView::InteractionModeUpdate(Vector3 & playerPos){
     int playerMatrixPos[3] = {0,0,0};
     Vector3 cameraRotation = {0,0,0};
@@ -289,6 +328,7 @@ void DungeonView::InteractionModeUpdate(Vector3 & playerPos){
     }
 
     if(IsKeyPressed(KEY_F)){
+        hasToFocusStart = false;
         targetPos = Vector3Sum(dungeonPos,stats->GetStart());
         cameraDistance = 15;
     }
@@ -296,4 +336,10 @@ void DungeonView::InteractionModeUpdate(Vector3 & playerPos){
 
 void DungeonView::enterPlayMode(){
     mode = player; 
+}
+
+void DungeonView::SetCameraDefault(){
+    cameraDistance = stats->currentDungeon->size_x+stats->currentDungeon->size_z;
+    cameraAngle = {DEG2RAD * 45,DEG2RAD * 45};
+    targetPos = {0,0,0};
 }

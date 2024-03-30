@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <stack>
+#include <random>
 
 class Node{
 public:
@@ -221,6 +222,7 @@ void postOrderJoiner(Node * root,dungeonMatrix * dungeon){
 }
 
 dungeonMatrix * generateDungeon(int width,int height,int minWidthSpace,int minHeightSpace,int minRoomWidth,int minRoomHeight,int maxRoomWidth,int maxRoomHeight,int seed){
+    srand(seed);
     std::vector<std::vector<int>> dungeon;
 
     for(int i = 0; i < width;i++){
@@ -258,8 +260,8 @@ dungeonMatrix * generateDungeon(int width,int height,int minWidthSpace,int minHe
 
 int main(int args,char ** argv){
     ArgHandler argHadler;
-    srand(time(NULL));
-    int seed = rand();
+    std::random_device rd;
+    int seed = rd();
     argHadler.AddArg("width",20,"dungeon's max width");
     argHadler.AddArg("height",20,"dungeon's max height");
     argHadler.AddArg("minWidthSpace",8,"minimun reserved width space for a room");

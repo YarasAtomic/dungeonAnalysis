@@ -79,10 +79,13 @@ std::string DungeonTab::GetDungeonName(){
 
 void DungeonTab::SetConfig(std::string name,std::string path,std::string out){
     config = new AlgorithmConfig(name,path,out);
+    stats = config->SetUpStats();
+    stats->hasToUpdateView = true;
+    stats->UpdateView(view);
 }
 void DungeonTab::SetDungeon(std::string path,std::string file){
     stats = new DungeonStat(path,file,false,false);
-    stats->Import();
+    stats->Import(false);
 }
 std::string DungeonTab::GetName(){
     if(config!=nullptr) return config->GetName();

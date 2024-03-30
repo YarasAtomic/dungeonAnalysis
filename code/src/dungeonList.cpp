@@ -80,7 +80,7 @@ void DungeonList::UpdateDungeons(std::vector<DungeonStat*> * dungeons){
         if(index == -1){
             dungeons->push_back(new DungeonStat(dir+"/"+selected,selected,false,false));
             (*dungeons)[dungeons->size()-1]->open = true;
-            (*dungeons)[dungeons->size()-1]->Import();
+            (*dungeons)[dungeons->size()-1]->Import(false);
         }else{
             (*dungeons)[index]->open = true;
         }

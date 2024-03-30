@@ -7,14 +7,24 @@ struct dungeonMatrix;
 
 class DungeonView;
 
+struct Stats{
+    int wallCount = -1;
+    int floorCount = -1;
+    float generationTime = 0;
+    float linearDistanceStartGoal = 0;
+    Vector3 end = {0,0,0};
+    Vector3 start = {0,0,0};
+    int dungeonPathLength = 0;
+    bool pathGenerated = false;
+};
+
 class DungeonStat : public DocumentWindow{
     std::string dunpath;
     std::string dunname;
     bool isGenerated = false;
     DungeonView * view = nullptr;
-
-    bool showPath = true;
     
+    bool batch = false;
 
     // stats
     bool statsGenerated = false;
@@ -27,18 +37,20 @@ class DungeonStat : public DocumentWindow{
     bool pathGenerated = false;
     bool generatingPath = false;
 
+    std::vector<Stats *> statsBatch;
+
     void GenerateStats();
     void GeneratePath();
 protected:
     void Show() override;
 public:
-    dungeonMatrix * currentDungeon;
+    dungeonMatrix * currentDungeon = nullptr;
     bool hasToUpdateView = false;
     bool hasToGeneratePath = false;
     double dungeonTime = 0;
 
     DungeonStat(std::string path,std::string file,bool isGenerated,bool hasToGeneratePath);
-    void Import();
+    void Import(bool batchImport);
 
     void Setup() override;
     void ShowAsWindow() override;
@@ -49,6 +61,7 @@ public:
 
     void UpdateViews(std::vector<DungeonView*> &);
     void UpdateView(DungeonView * &);
+    void ClearBatchData();
 
     Vector3 GetEnd();
     Vector3 GetStart();
@@ -56,6 +69,7 @@ public:
     std::string GetName();
 
     void DrawPath(Vector3 pos,Color color,float size,bool drawLast);
+    bool IsPathGenerated();
 };
 
 # endif
