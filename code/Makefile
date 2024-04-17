@@ -36,14 +36,17 @@ test: $(TOOL_OBJ)
 algorithm:
 	mkdir -p ./algorithm
 
-$(TOOL_OBJ): $(OBJDIR)/%.o: $(TOOLDIR)/%.cpp
+objDir:
+	mkdir $(OBJDIR)
+
+$(TOOL_OBJ): $(OBJDIR)/%.o: $(TOOLDIR)/%.cpp $(OBJDIR)
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(IMGUI_OBJ): $(OBJDIR)/%.o: $(IMGUIDIR)/%.cpp
+$(IMGUI_OBJ): $(OBJDIR)/%.o: $(IMGUIDIR)/%.cpp $(OBJDIR)
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(SRC_OBJ): $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(TOOL_OBJ) $(IMGUI_OBJ)
+$(SRC_OBJ): $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(TOOL_OBJ) $(IMGUI_OBJ) $(OBJDIR)
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 $(OBJDIR):
-	mkdir $(OBJDIR)
+	mkdir -p $@

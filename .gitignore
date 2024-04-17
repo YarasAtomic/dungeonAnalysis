@@ -1,2 +1,2 @@
-./code/dbaSRC
-./code/obj/*.o
+./code/dbaSRC/*
+*.o
