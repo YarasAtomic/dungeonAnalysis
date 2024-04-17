@@ -38,15 +38,19 @@ class DungeonStat : public DocumentWindow{
     bool generatingPath = false;
 
     std::vector<Stats *> statsBatch;
+    std::vector<std::vector<unsigned int>> * densityMap = nullptr;
 
     void GenerateStats();
     void GeneratePath();
+    void SaveStats();
+    void SetUpDensityMap();
 protected:
     void Show() override;
 public:
     dungeonMatrix * currentDungeon = nullptr;
     bool hasToUpdateView = false;
     bool hasToGeneratePath = false;
+    bool hasToSave = false;
     double dungeonTime = 0;
 
     DungeonStat(std::string path,std::string file,bool isGenerated,bool hasToGeneratePath);
@@ -70,6 +74,9 @@ public:
 
     void DrawPath(Vector3 pos,Color color,float size,bool drawLast);
     bool IsPathGenerated();
+
+    void DrawDensityMap(Vector3 pos, Color color);
+    bool IsBatch();
 };
 
 # endif

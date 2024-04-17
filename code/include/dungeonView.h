@@ -52,6 +52,7 @@ public:
     bool hasToRestartView = false;
 
     bool showPath = true;
+    bool showDensityMap = false;
 
     DungeonView(std::string name,DungeonStat * stats);
 

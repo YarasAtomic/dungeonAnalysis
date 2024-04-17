@@ -59,6 +59,10 @@ void DungeonView::ShowAsChild()
         ImGui::SameLine();
         ImGui::Checkbox("Show path",&showPath);
         ImGui::EndDisabled();
+        ImGui::BeginDisabled(stats==nullptr||!stats->IsBatch());
+        ImGui::SameLine();
+        ImGui::Checkbox("Show density map",&showDensityMap);
+        ImGui::EndDisabled();
         if (ImGui::BeginChild(std::string(name + " 3D View").c_str(),ImVec2(0,-(float)GetScreenHeight()/2), ImGuiChildFlags_ResizeY,ImGuiWindowFlags_None)){
             Show();
         }
@@ -175,6 +179,8 @@ void DungeonView::Update()
             DrawModel(model,dungeonPos,1,alt ? GRAY : DARKGRAY);
             index++;
         }
+        if(showDensityMap)
+            stats->DrawDensityMap(dungeonPos,ORANGE);
         DrawCube(Vector3Sum(stats->GetStart(),offset),0.5f,0.5f,0.5f,GREEN);
         DrawCube(Vector3Sum(stats->GetEnd(),offset),0.5f,0.5f,0.5f,RED);
 

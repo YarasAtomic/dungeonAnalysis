@@ -13,6 +13,7 @@ AlgorithmConfig::AlgorithmConfig(std::string name,std::string dp,std::string out
 }
 
 void AlgorithmConfig::GetHelp(){
+    std::cout << "Reading arg data" << std::endl;
     std::string command = (dirpath+"/"+ filename+ " " + "-help");
     std::string result = commandFifo(command,outdirpath+"/tempfifo");
     if(result== "") return;
@@ -117,7 +118,6 @@ void AlgorithmConfig::Update(){
     if(!open) return;
     if(!configGenerated) GetHelp();
     if(pendingRuns>0&&!runningAlgorithm){
-        // runAlgorithm = false;
         pendingRuns--;
         runningAlgorithm = true;
 

@@ -21,7 +21,7 @@ class AlgorithmConfig : public DocumentWindow{
     std::string outdirpath;
     std::vector<HelpSection> options;
     bool configGenerated = false;
-    // bool runAlgorithm = false;
+    
     int pendingRuns = 0;
     bool runningAlgorithm = false;
     DungeonStat* statWindow = nullptr;
