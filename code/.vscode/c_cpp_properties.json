@@ -7,7 +7,8 @@
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/imgui",
                 "${workspaceFolder}/imgui",
-                "${workspaceFolder}/imgui"
+                "${workspaceFolder}/imgui",
+                "${workspaceFolder}/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",

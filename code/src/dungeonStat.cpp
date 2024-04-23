@@ -51,7 +51,10 @@ void DungeonStat::Import(bool batchImport){
         std::cout << "Size X: " << currentDungeon->size_x << std::endl;
         std::cout << "Size Y: " << currentDungeon->size_y << std::endl;
         std::cout << "Size Z: " << currentDungeon->size_z << std::endl;
-        if(batchImport) SetUpDensityMap();
+        if(batchImport && hasToInitDensityMap){
+            SetUpDensityMaps();
+            hasToInitDensityMap = false;
+        }
     }
     if(((view!=nullptr&&view->open)||view==nullptr)/*&&!batchImport*/){ // Create and open a new view if it doesnt exist, or update if its open
         hasToUpdateView = true;
@@ -174,13 +177,11 @@ void DungeonStat::UpdateView(DungeonView* & view){
     }
 }
 
-void DungeonStat::SetUpDensityMap(){
-    if(densityMap!=nullptr) return;
-    densityMap = new std::vector<std::vector<unsigned int>>();
-    (*densityMap).resize(currentDungeon->size_x); // resize density map
-    for(int i = 0; i < currentDungeon->size_x;i++)
-        (*densityMap)[i] = std::vector<unsigned int> (currentDungeon->size_z,0);// initialize density map
-
+void DungeonStat::SetUpDensityMaps(){
+    densityMap.Init(currentDungeon->size_x,currentDungeon->size_z);
+    pathDensityMap.Init(currentDungeon->size_x,currentDungeon->size_z);
+    startDensityMap.Init(currentDungeon->size_x,currentDungeon->size_z);
+    goalDensityMap.Init(currentDungeon->size_x,currentDungeon->size_z);
 }
 
 void DungeonStat::GenerateStats(){
@@ -197,7 +198,7 @@ void DungeonStat::GenerateStats(){
                 if(tile&DUN_PYZ_WALL) wallCount++;
                 if(tile&DUN_PXZ_WALL) {
                     floorCount++;
-                    if(batch) (*densityMap)[i][k]++;
+                    if(batch) densityMap.Add(i,k,1);
                 }
             }
         }
@@ -217,6 +218,8 @@ void DungeonStat::GenerateStats(){
         newStats->end = end;
         newStats->generationTime = dungeonTime;
         statsBatch.push_back(newStats);
+        startDensityMap.Add(start.x,start.z,1);
+        goalDensityMap.Add(end.x,end.z,1);
     }
 
     statsGenerated = true;
@@ -242,7 +245,10 @@ void DungeonStat::GeneratePath(){
         int length = dungeonPath.valid ? dungeonPath.GetLength() : -1;
         statsBatch.back()->dungeonPathLength = length;
         statsBatch.back()->pathGenerated = pathGenerated && length >= 0;
-
+        for(int i = 0 ; i < dungeonPath.GetLength(); i++){
+            Vector3Int pos = dungeonPath.GetPos(i);
+            pathDensityMap.Add(pos.x,pos.z,1);
+        }
     }
 }
 
@@ -267,39 +273,29 @@ std::string DungeonStat::GetName(){
 }
 
 void DungeonStat::ClearBatchData(){
+    hasToInitDensityMap = true;
+    int s = statsBatch.size();
     for(int i = 0; i < statsBatch.size(); i++){
         delete statsBatch[i];
     }
     statsBatch.clear();
-
-    if(densityMap!=nullptr) delete densityMap;
-    densityMap = nullptr;
 }
 
-unsigned char GetColorGradientByte(unsigned char c0, unsigned char c1, float value){
-    return ((float)(c1-c0) * value) + c0;
+void DungeonStat::DrawDensityMap(Vector3 pos, Vector3 size, Color color){
+    densityMap.Draw(pos,size,color,statsBatch.size());
 }
 
-Color GetColorGradient(Color c0, Color c1, float value){
-    return {
-        GetColorGradientByte(c0.r,c1.r,value),
-        GetColorGradientByte(c0.g,c1.g,value),
-        GetColorGradientByte(c0.b,c1.b,value),
-        GetColorGradientByte(c0.a,c1.a,value)
-    };
+void DungeonStat::DrawStartDensityMap(Vector3 pos, Vector3 size, Color color){
+    // startDensityMap.DrawDivided(pos,size,color,statsBatch.size(),&densityMap);
+    startDensityMap.Draw(pos,size,color,statsBatch.size());
 }
 
-void DungeonStat::DrawDensityMap(Vector3 pos,Color color){
-    float densityStep = 1/(float)statsBatch.size();
-    if(densityMap == nullptr) return;
-    for(int i = 0; i < currentDungeon->size_x; i++){
-        for(int j = 0; j < currentDungeon->size_z; j++){
-            float relDensity = (*densityMap)[i][j]*densityStep;
-            Vector3 tilePos = {
-                pos.x+i+0.5f,
-                pos.y+(relDensity*10),
-                pos.z+j+0.5f};
-            DrawPlane(tilePos,{1,1},GetColorGradient(color,WHITE,relDensity));
-        }
-    }
+void DungeonStat::DrawGoalDensityMap(Vector3 pos, Vector3 size, Color color){
+    goalDensityMap.DrawDivided(pos,size,color,statsBatch.size(),&densityMap);
+    // goalDensityMap.Draw(pos,size,color,statsBatch.size());
+}
+
+void DungeonStat::DrawPathDensityMap(Vector3 pos, Vector3 size, Color color){
+    pathDensityMap.DrawDivided(pos,size,color,statsBatch.size(),&densityMap);
+    // pathDensityMap.Draw(pos,size,color,statsBatch.size());
 }

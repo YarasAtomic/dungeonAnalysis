@@ -4,6 +4,20 @@
 #include "dungeonStat.h"
 #include "model.h"
 
+inline const char* to_string(viewMode mode){
+    switch(mode){
+    case DUNGEON:
+        return "Dungeon";
+    case DENSITY_MAP:
+        return "Density Map";
+    case PATH_MAP:
+        return "Path Map";
+    default:
+        return "Unknown";
+    }
+}
+
+
 DungeonView::DungeonView(std::string name,DungeonStat * stats){
     this->name = name;
     this->stats = stats;
@@ -47,7 +61,7 @@ void DungeonView::ShowAsWindow()
 
 void DungeonView::ShowAsChild()
 {        
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4)); // custom button spacing
     ImGui::Checkbox("Hide view",&hidden);
     if(!hidden){
         if(ImGui::Button("Restart view")) hasToRestartView = true;
@@ -55,18 +69,22 @@ void DungeonView::ShowAsChild()
         if(ImGui::Button("Focus start")) hasToFocusStart = true;
         ImGui::SameLine();
         if(ImGui::Button("Focus goal")) hasToFocusGoal = true;
-        ImGui::BeginDisabled(stats==nullptr||!stats->IsPathGenerated());
+
+        const char* viewModes[] = {"Dungeon","Density map","Path map","Start map","Goal map"};
+        ImGui::SameLine();
+        ImGui::PushItemWidth(120);
+        ImGui::Combo("View mode",&mode,viewModes,IM_ARRAYSIZE(viewModes));
+        ImGui::PopItemWidth();
+        ImGui::BeginDisabled(stats==nullptr||!stats->IsPathGenerated()||mode!=DUNGEON);
         ImGui::SameLine();
         ImGui::Checkbox("Show path",&showPath);
         ImGui::EndDisabled();
-        ImGui::BeginDisabled(stats==nullptr||!stats->IsBatch());
-        ImGui::SameLine();
-        ImGui::Checkbox("Show density map",&showDensityMap);
-        ImGui::EndDisabled();
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 0)); // force l¡lower line on the view
         if (ImGui::BeginChild(std::string(name + " 3D View").c_str(),ImVec2(0,-(float)GetScreenHeight()/2), ImGuiChildFlags_ResizeY,ImGuiWindowFlags_None)){
             Show();
         }
         ImGui::EndChild();
+        ImGui::PopStyleVar();
     }
     
     ImGui::PopStyleVar();
@@ -98,35 +116,22 @@ void DungeonView::Show(){
     if(IsRenderTextureReady(viewTexture)) rlImGuiImageRenderTextureFit(&viewTexture, true);
 }
 
-void DungeonView::Update()
-{
+void DungeonView::Update(){
+    double currentTime = GetTime();
+    double deltaTime = currentTime - previousTime;
+    previousTime = currentTime;
     if (!open||hidden)
         return;
 
-    if (resized)
-    {
+    if (resized){
         UnloadRenderTexture(viewTexture);
         viewTexture = LoadRenderTexture(screenWidth, screenHeight);
     }
 
     if(focused){
-        switch(mode){
-        case player:
-            // playerModeUpdate(currentDungeon,dungeonPos,cameraAngle,targetPos);
-            break;
-        case menu:
-            // menuModeButtons.update(screenWidth,screenHeight);
-            InteractionModeUpdate(targetPos);
-            break;
-        }
+        InteractionModeUpdate(targetPos);
     }
-    switch(mode){
-    case player:
-        break;
-    case menu:
-        InteractionModePasiveUpdate();
-        break;
-    }
+    InteractionModePasiveUpdate();
 
     //Generate model
     if(stats!=nullptr&&stats->hasToUpdateView){
@@ -168,7 +173,7 @@ void DungeonView::Update()
     ClearBackground(BLACK);
     BeginMode3D(camera);
 
-    if(modelLoaded/*&&IsModelReady(dungeonModel)*/)
+    if(modelLoaded&&mode == DUNGEON)
     {
         Vector3 offset = Vector3Sum(dungeonPos,{0.5f,0.5f,0.5f});
         // DrawModel(dungeonModel,dungeonPos,1,GRAY);
@@ -179,36 +184,37 @@ void DungeonView::Update()
             DrawModel(model,dungeonPos,1,alt ? GRAY : DARKGRAY);
             index++;
         }
-        if(showDensityMap)
-            stats->DrawDensityMap(dungeonPos,ORANGE);
+
         DrawCube(Vector3Sum(stats->GetStart(),offset),0.5f,0.5f,0.5f,GREEN);
         DrawCube(Vector3Sum(stats->GetEnd(),offset),0.5f,0.5f,0.5f,RED);
 
         float pathSphereSize = cameraDistance/100 > 0.4 ? 0.4 : cameraDistance/100;
         stats->DrawPath(offset,ORANGE,pathSphereSize,false);
-        
-        // DrawLine3D({0,0,0},{0,0,10},WHITE);
-        // DrawLine3D({0,0,0},{0,10,0},WHITE);
-        // DrawLine3D({0,0,0},{10,0,0},WHITE);
-
-        Ray ray = GetViewRay(mousePos,camera,screenWidth,screenHeight); //Raylib 5.1
-
-        // RayCollision coll = GetRayCollisionQuad(ray,{-INFINITY,0,-INFINITY},{-INFINITY,0,INFINITY},{INFINITY,0,INFINITY},{INFINITY,0,-INFINITY});
-        RayCollision coll = GetRayCollisionQuad(ray,{-1000,0,-1000},{-1000,0,1000},{1000,0,1000},{1000,0,-1000});
-        clickWorld = coll.point;
-        // DrawSphereWires(ray.position,1000,10,10,{ 100, 41, 55, 255 });
-        DrawSphereWires(ray.position,1000,10,10,{ 55, 41, 100, 255 });
     }
 
+    if(mode==DENSITY_MAP){
+        densityMapAnim = densityMapAnim >= 1 ? 1 : densityMapAnim + deltaTime * densityMapAnimSpeed;
+        stats->DrawDensityMap(dungeonPos,{1,densityMapAnim,1},BLUE);
+    }else if(mode==PATH_MAP){
+        densityMapAnim = densityMapAnim >= 1 ? 1 : densityMapAnim + deltaTime * densityMapAnimSpeed;
+        stats->DrawPathDensityMap(dungeonPos,{1,densityMapAnim,1},ORANGE);
+    }else if(mode==START_MAP){
+        densityMapAnim = densityMapAnim >= 1 ? 1 : densityMapAnim + deltaTime * densityMapAnimSpeed;
+        stats->DrawStartDensityMap(dungeonPos,{1,densityMapAnim,1},GREEN);
+    }else if(mode==GOAL_MAP){
+        densityMapAnim = densityMapAnim >= 1 ? 1 : densityMapAnim + deltaTime * densityMapAnimSpeed;
+        stats->DrawGoalDensityMap(dungeonPos,{1,densityMapAnim,1},RED);
+    }else{
+        densityMapAnim = 0;
+    }
+
+    Ray ray = GetViewRay(mousePos,camera,screenWidth,screenHeight); //Raylib 5.1
+    RayCollision coll = GetRayCollisionQuad(ray,{-1000,0,-1000},{-1000,0,1000},{1000,0,1000},{1000,0,-1000});
+    clickWorld = coll.point;
+
+    DrawSphereWires(ray.position,1000,10,10,{ 55, 41, 100, 255 });
+
     EndMode3D();
-
-
-    // if(mode == player){
-    //     DrawText("Press escape to exit Player mode",10,10,20,WHITE);
-    // }else{
-    //     DrawText("Interact mode",10,10,15,SKYBLUE);
-    //     // menuModeButtons.draw(screenWidth,screenHeight);
-    // }
 
     EndTextureMode();
 
@@ -222,76 +228,6 @@ void DungeonView::Shutdown()
     }
     UnloadRenderTexture(viewTexture);
     UnloadShader(lightingShader);
-}
-
-
-void DungeonView::playerModeUpdate(dungeonMatrix * dungeon,Vector3 dungeonPos,Vector3 & playerPos){
-    int playerMatrixPos[3] = {0,0,0};
-    Vector3 cameraRotation = {0,0,0};
-    Vector3 movement = {0,0,0};
-    Vector2 localMovement = {0,0};
-    
-    if(IsKeyDown(KEY_W))
-    {
-        localMovement.y++;
-    }
-
-    if(IsKeyDown(KEY_S))
-    {
-        localMovement.y--;
-    }
-
-    if(IsKeyDown(KEY_A))
-    {
-        localMovement.x--;
-    }
-
-    if(IsKeyDown(KEY_D))
-    {
-        localMovement.x++;
-    }
-
-    if(IsKeyDown(KEY_ESCAPE))
-    {
-        mode = menu;
-        ShowCursor();
-        return;
-    }
-
-    HideCursor();
-
-    cameraAngle = {cameraAngle.x-GetMouseDelta().x*mouseSensitivity,cameraAngle.y-GetMouseDelta().y*mouseSensitivity};
-    
-    cameraAngle.y = cameraAngle.y > 1.5 ? 1.5 : cameraAngle.y;
-    cameraAngle.y = cameraAngle.y < -1.5 ? -1.5 : cameraAngle.y;
-
-    playerMatrixPos[0] = playerPos.x - dungeonPos.x;
-    playerMatrixPos[1] = playerPos.y - dungeonPos.y;
-    playerMatrixPos[2] = playerPos.z - dungeonPos.z;
-
-    if(
-        (playerMatrixPos[0] <0)||(playerMatrixPos[1] <0)||(playerMatrixPos[2] <0)||
-        (playerMatrixPos[0] >= dungeon->size_x)||
-        (playerMatrixPos[1] >= dungeon->size_y)||
-        (playerMatrixPos[2] >= dungeon->size_z)||
-        ((dungeon->data[playerMatrixPos[0]][playerMatrixPos[1]][playerMatrixPos[2]] & DUN_PXZ_WALL) == 0))
-    {
-
-    }
-
-    movement = {0,0,0};
-    if(localMovement.y!=0)
-    {
-        movement = {localMovement.y*cos(cameraAngle.x),0,localMovement.y*sin(cameraAngle.x)};
-    }
-    if(localMovement.x!=0)
-    {
-        movement = {movement.x+localMovement.x*cos(cameraAngle.x+PI/2),0,movement.z+localMovement.x*sin(cameraAngle.x+PI/2)};
-    }
-
-    movement = {-movement.x*playerSpeed,-movement.y*playerSpeed,-movement.z*playerSpeed};
-
-    playerPos = Vector3Sum(playerPos,movement);
 }
 
 void DungeonView::InteractionModePasiveUpdate(){
@@ -340,12 +276,11 @@ void DungeonView::InteractionModeUpdate(Vector3 & playerPos){
     }
 }
 
-void DungeonView::enterPlayMode(){
-    mode = player; 
-}
-
 void DungeonView::SetCameraDefault(){
-    cameraDistance = stats->currentDungeon->size_x+stats->currentDungeon->size_z;
+    if(stats!=nullptr&&stats->currentDungeon!=nullptr)
+        cameraDistance = stats->currentDungeon->size_x+stats->currentDungeon->size_z;
+    else
+        cameraDistance = 10;
     cameraAngle = {DEG2RAD * 45,DEG2RAD * 45};
     targetPos = {0,0,0};
 }

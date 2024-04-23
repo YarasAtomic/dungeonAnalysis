@@ -3,6 +3,7 @@
 
 #include "ui.h"
 #include "graph.h"
+#include "densityMap.h"
 struct dungeonMatrix;
 
 class DungeonView;
@@ -38,12 +39,17 @@ class DungeonStat : public DocumentWindow{
     bool generatingPath = false;
 
     std::vector<Stats *> statsBatch;
-    std::vector<std::vector<unsigned int>> * densityMap = nullptr;
+    // std::vector<std::vector<unsigned int>> * densityMap = nullptr;
+    DensityMap densityMap;
+    DensityMap pathDensityMap;
+    DensityMap startDensityMap;
+    DensityMap goalDensityMap;
+    bool hasToInitDensityMap = true;
 
     void GenerateStats();
     void GeneratePath();
     void SaveStats();
-    void SetUpDensityMap();
+    void SetUpDensityMaps();
 protected:
     void Show() override;
 public:
@@ -75,7 +81,10 @@ public:
     void DrawPath(Vector3 pos,Color color,float size,bool drawLast);
     bool IsPathGenerated();
 
-    void DrawDensityMap(Vector3 pos, Color color);
+    void DrawDensityMap(Vector3 pos, Vector3 size, Color color);
+    void DrawPathDensityMap(Vector3 pos, Vector3 size, Color color);
+    void DrawStartDensityMap(Vector3 pos, Vector3 size, Color color);
+    void DrawGoalDensityMap(Vector3 pos, Vector3 size, Color color);
     bool IsBatch();
 };
 

@@ -91,11 +91,17 @@ void AlgorithmConfig::Show(){
     if(batchRun < 1) batchRun = 1;
     ImGui::EndDisabled();
     if(runningAlgorithm){
-        ImGui::Text("Running...");
+        
         if(runModeBatch){
+            
+            char buf[32];
+            int done = batchRun-pendingRuns;
+            sprintf(buf, "%d/%d", done, batchRun);
+            // ImGui::TextUnformatted(buf);
+            ImGui::ProgressBar(done/(float)(batchRun),ImVec2(0.f, 0.f), buf);
             ImGui::SameLine();
-            ImGui::Text("\t%i/%i",batchRun-pendingRuns,batchRun);
         }
+        ImGui::Text("Running...");
     }
 }
 
