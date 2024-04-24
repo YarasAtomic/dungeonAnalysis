@@ -41,16 +41,22 @@ void DungeonStat::SaveStats(){
 
 void DungeonStat::Import(bool batchImport){
     batch = batchImport;
-    std::cout << "importing: " << dunpath << std::endl;
+    if(!batch)
+        std::cout << "importing: " << dunpath << std::endl;
+    if(currentDungeon!=nullptr)
+        freeDungeonMatrix(&currentDungeon);
     bool dungeonImported = file2Dun(&currentDungeon,dunpath);
 
     if(dungeonImported&&currentDungeon!=nullptr)
     {
-        std::cout << "file readed succesfully" << std::endl;
-        std::cout << "Imported dungeon:" << std::endl;
-        std::cout << "Size X: " << currentDungeon->size_x << std::endl;
-        std::cout << "Size Y: " << currentDungeon->size_y << std::endl;
-        std::cout << "Size Z: " << currentDungeon->size_z << std::endl;
+        if(!batch){
+            std::cout << "file readed succesfully" << std::endl;
+            std::cout << "Imported dungeon:" << std::endl;
+            std::cout << "Size X: " << currentDungeon->size_x << std::endl;
+            std::cout << "Size Y: " << currentDungeon->size_y << std::endl;
+            std::cout << "Size Z: " << currentDungeon->size_z << std::endl;
+        }
+
         if(batchImport && hasToInitDensityMap){
             SetUpDensityMaps();
             hasToInitDensityMap = false;

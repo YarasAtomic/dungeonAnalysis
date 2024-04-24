@@ -64,9 +64,18 @@ void DungeonTab::ShowAsChild(){
 void DungeonTab::ShowAsWindow(){}
 
 void DungeonTab::Shutdown(){
-    if(stats!=nullptr) stats->Shutdown();
-    if(view!=nullptr) view->Shutdown();
-    if(config!=nullptr) config->Shutdown();
+    if(stats!=nullptr) {
+        stats->Shutdown();
+        delete stats;
+    }
+    if(view!=nullptr) {
+        view->Shutdown();
+        delete view;
+    }
+    if(config!=nullptr) {
+        config->Shutdown();
+        delete config;
+    }
 }
 
 std::string DungeonTab::GetAlgorithmName(){

@@ -4,12 +4,12 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <regex>
 
 AlgorithmConfig::AlgorithmConfig(std::string name,std::string dp,std::string outpath){
     dirpath = dp;
     filename = name;
     outdirpath = outpath;
-    options = std::vector<HelpSection>();
 }
 
 void AlgorithmConfig::GetHelp(){
@@ -44,30 +44,62 @@ void AlgorithmConfig::ShowAsChild(){
 
 void AlgorithmConfig::Show(){
     if(configGenerated){
-        for(int i = 0; i < options.size(); i++){
-            const char * text = options[i].text.c_str();
+        int cursorStart = ImGui::GetCursorPosX();
+        for(int i = 0; i < optionsLines.size(); i++){
+            const char * text = optionsLines[i].text.c_str();
+            const char * desc = optionsLines[i].desc.c_str();
             
-            switch(options[i].type){
+            switch(optionsLines[i].type){
             case HelpSectionType::Title:
                 ImGui::TextUnformatted(text);
-                break;
-            case HelpSectionType::Desc:
-                ImGui::SameLine();
-                HelpMarker(text);
+                if(optionsLines[i].desc.size()>0) {
+                    ImGui::SameLine();
+                    HelpMarker(desc);
+                }
                 break;
             case HelpSectionType::Option:
-                ImGui::TextUnformatted(text);
-                ImGui::SameLine();
-                std::stringstream ss;
-                ss << "##" << options[i].text;
-                // const char * label = std::string("##" + options[i].text).c_str();
-                // const char * label = "##label";
-                ImGui::SetNextItemWidth(-40.0);
-                ImGui::InputText((ss.str().c_str()),options[i].value,IM_ARRAYSIZE(options[i].value));
+                if(optionsLines[i].text!="o"){
+                    ImGui::TextUnformatted(text);
+                    ImGui::SameLine();
+                    int titleWidth = ImGui::GetCursorPosX() - cursorStart;
+                    argMaxCursor = argMaxCursor < titleWidth ? titleWidth : argMaxCursor;
+                    std::stringstream ss;
+                    std::stringstream checkboxss;
+                    ss << "##" << optionsLines[i].text;
+                    checkboxss << "##" << optionsLines[i].text << "_use";
+                    ImGui::SetCursorPosX(cursorStart + argMaxCursor);
+                    switch(optionsLines[i].valueType){
+                    case ValueType::Int:
+                        ImGui::Checkbox((checkboxss.str().c_str()),&optionsLines[i].use);
+                        ImGui::SameLine();
+                        ImGui::BeginDisabled(!optionsLines[i].use);
+                        ImGui::SetNextItemWidth(-40.0);
+                        ImGui::InputInt((ss.str().c_str()),&optionsLines[i].intValue);
+                        ImGui::EndDisabled();
+                        break;
+                    case ValueType::Str:
+                        ImGui::InputText((ss.str().c_str()),optionsLines[i].textValue,IM_ARRAYSIZE(optionsLines[i].textValue));
+                        break;
+                    case ValueType::Flt:
+                        ImGui::Checkbox((checkboxss.str().c_str()),&optionsLines[i].use);
+                        ImGui::SameLine();
+                        ImGui::BeginDisabled(!optionsLines[i].use);
+                        ImGui::SetNextItemWidth(-40.0);
+                        ImGui::InputFloat((ss.str().c_str()),&optionsLines[i].fltValue);
+                        ImGui::EndDisabled();
+                        break;
+                    }
+                    if(optionsLines[i].desc.size()>0) {
+                        ImGui::SameLine();
+                        HelpMarker(desc);
+                    }
+                }
+
                 break;
             }
         }
     }
+
     ImGui::Checkbox("Resolve",&hasToGeneratePath);
 
     ImGui::BeginDisabled(runningAlgorithm);
@@ -79,7 +111,6 @@ void AlgorithmConfig::Show(){
     }
     ImGui::SameLine();
     if(ImGui::Button("Run batch")&&pendingRuns==0&&!runningAlgorithm){
-        // runAlgorithm = true;
         pendingRuns = batchRun;
         runModeBatch = true;
         hasToClearStats = true;
@@ -111,15 +142,6 @@ void AlgorithmConfig::ThreadRunAlgorithm(AlgorithmConfig & config){
     config.runningAlgorithm = false;
 }
 
-void TestWait(){
-    std::cout << "start wait" << std::endl;
-    for(int i = 0; i < 30; i++){
-        sleep(1);
-        std::cout << "ping" << std::endl;
-    }
-    std::cout << "end wait" << std::endl;
-}
-
 void AlgorithmConfig::Update(){
     if(!open) return;
     if(!configGenerated) GetHelp();
@@ -137,6 +159,9 @@ void AlgorithmConfig::Shutdown(){
         std::string killCmd = "pkill " + filename; //! This is dangerous for other processes, only works on linux
         std::system(killCmd.c_str());
     }
+    if(algorithmThread!=nullptr){
+        delete algorithmThread;
+    }
 };
 
 std::string AlgorithmConfig::GetName(){
@@ -144,70 +169,38 @@ std::string AlgorithmConfig::GetName(){
 }
 
 void AlgorithmConfig::GenerateConfig(std::string help){
-    std::string next;
-    HelpSectionType lastType = HelpSectionType::None;
-    HelpSectionType currentType = HelpSectionType::None;
-    // For each character in the string
-    for (std::string::const_iterator it = help.begin(); it != help.end(); it++) {
-        if(currentType == HelpSectionType::None){
-            if(*it == '\t'||*it == '-'){
-                currentType = HelpSectionType::Option;
-            }else if(lastType == HelpSectionType::Title){
-                currentType = HelpSectionType::Desc;
-            }else{
-                currentType = HelpSectionType::Title;
+    std::regex argregex("\\t[\\w\\s]*");
+    std::string delimiter = "\n";
+    size_t pos = 0;
+    std::string line;
+    std::string wordregexp = "([\\w\\s':\\(\\)\\[\\]\\.\\,]*)";
+    std::regex exparg("\\t\\-(\\w*)\\t\\[(int|flt|str)\\]\\t"+wordregexp);
+    std::regex expargnodesc("\\t\\-(\\w*)\\t\\[(int|flt|str)\\]");
+    std::regex exptitle(wordregexp+"\\t"+wordregexp);
+    std::regex exptitlenodesc(wordregexp);
+    std::smatch sm1;
+    while ((pos = help.find(delimiter)) != std::string::npos) {
+        line = help.substr(0, pos);
+        help.erase(0, pos + delimiter.length());
+        if(std::regex_match(line,exparg)){
+            if(std::regex_search(line,sm1,exparg)){
+                optionsLines.push_back({HelpSectionType::Option,StringToValue(sm1.str(2)),sm1.str(1),sm1.str(3)});
             }
-        }
-        // If we've hit the terminal character
-        if (*it == '\n') {
-            // If we have some characters accumulated
-            if (!next.empty()) {
-                switch(currentType){
-                case HelpSectionType::Title:
-                    options.push_back({currentType,next});
-                    break;
-                case HelpSectionType::Desc:
-                    options.push_back({currentType,next});
-                    break;
-                case HelpSectionType::Option:
-                    std::string optionName = GetOptionName(next);
-                    std::string optionDesc = GetOptionDesc(next);
-                    if(optionName!="o"&&optionName!="help"){
-                        options.push_back({currentType,optionName});
-                        options.push_back({HelpSectionType::Desc,optionDesc});
-                    }
-                    break;
-                }
-                // Add them to the result vector
-                // result.push_back(next);
-                lastType = currentType;
-                currentType = HelpSectionType::None;
-                next.clear();
+        }else if(std::regex_match(line,expargnodesc)){
+            if(std::regex_search(line,sm1,expargnodesc)){
+                optionsLines.push_back({HelpSectionType::Option,StringToValue(sm1.str(2)),sm1.str(1),""});
             }
-        } else {
-            // Accumulate the next character into the sequence
-            next += *it;
+        } else if(std::regex_match(line,exptitle)){
+            if(std::regex_search(line,sm1,exptitle)){
+                optionsLines.push_back({HelpSectionType::Title,ValueType::Void,sm1.str(1),sm1.str(1)});
+            }
+        } else if(std::regex_match(line,exptitlenodesc)){
+            if(std::regex_search(line,sm1,exptitlenodesc)){
+                optionsLines.push_back({HelpSectionType::Title,ValueType::Void,sm1.str(1),""});
+            }
         }
     }
-    if (!next.empty()){
-        switch(currentType){
-        case HelpSectionType::Title:
-            options.push_back({currentType,next});
-            break;
-        case HelpSectionType::Desc:
-            options.push_back({currentType,next});
-            break;
-        case HelpSectionType::Option:
-            std::string optionName = GetOptionName(next);
-            std::string optionDesc = GetOptionDesc(next);
-            if(optionName!="o"&&optionName!="help"){
-                options.push_back({currentType,optionName});
-                options.push_back({HelpSectionType::Desc,optionDesc});
-            }
 
-            break;
-        }
-    }
     configGenerated = true;
 }
 
@@ -252,32 +245,48 @@ void AlgorithmConfig::RunAlgorithm(){
     std::string cmdBin = (dirpath+"/"+ filename);
     std::string cmdOptions = "";
 
-    for(int i = 0; i < options.size();i++){
-        // if(options[i].type == HelpSectionType::Option)
-        //     std::cout << "option " << options[i].text << " value: \"" << options[i].value << "\"" << " length " << CharArrayLength(options[i].value) << std::endl;
-        if(options[i].type == HelpSectionType::Option && CharArrayLength(options[i].value)>0){
-            cmdOptions += " -" + options[i].text + " " + options[i].value;
+    for(int i = 0; i < optionsLines.size();i++){
+        if(optionsLines[i].type == HelpSectionType::Option){
+            switch(optionsLines[i].valueType){
+            case ValueType::Int:
+                if(optionsLines[i].use == true)
+                    cmdOptions += " -" + optionsLines[i].text + " " + std::to_string(optionsLines[i].intValue);
+                break;
+            case ValueType::Flt:
+                if(optionsLines[i].use == true)
+                    cmdOptions += " -" + optionsLines[i].text + " " + std::to_string(optionsLines[i].fltValue);
+                break;
+            case ValueType::Str:
+                if(CharArrayLength(optionsLines[i].textValue)>0)
+                    cmdOptions += " -" + optionsLines[i].text + " " + optionsLines[i].textValue;
+                break;
+            }
         }
     }
 
     cmdOptions += " -o " + outdirpath + "/temp.dun";
 
     std::string command = cmdBin + cmdOptions;
-    std::cout << command << std::endl;
+    if(!batchRun)
+        std::cout << command << std::endl;
 
     std::string result = commandFifo(command,outdirpath+"/tempfifo");
     if(result== "") return;
-    // std::cout << "Algorithm std Output:\n" << result;
     
     const auto end{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> elapsed_seconds{end - start};
     dungeonTime = elapsed_seconds.count();
-    std::cout << "execution Time " << dungeonTime << " seconds" << std::endl;
+    if(!batchRun)
+        std::cout << "execution Time " << dungeonTime << " seconds" << std::endl;
 }
 
 //! this is utterly useless and i should remove it, also it doesnt work
 void AlgorithmConfig::UpdateStats(std::vector<DungeonStat*> & stats){
     if(hasToUpdateStats){
+        if(algorithmThread!=nullptr){
+            delete algorithmThread;
+            algorithmThread = nullptr;
+        }
         if(statWindow==nullptr) stats.push_back(SetUpStats());
         if(hasToClearStats){
             hasToClearStats = false;
@@ -314,17 +323,3 @@ DungeonStat* AlgorithmConfig::SetUpStats(){
     }
     return statWindow;
 }
-
-// void AlgorithmConfig::ImportDungeon(std::string file){
-//     std::cout << "importing: " << file << std::endl;
-//     bool dungeonImported = file2Dun(&currentDungeon,file);
-
-//     if(dungeonImported&&currentDungeon!=nullptr)
-//     {
-//         std::cout << "file readed succesfully" << std::endl;
-//         std::cout << "Imported dungeon:" << std::endl;
-//         std::cout << "Size X: " << currentDungeon->size_x << std::endl;
-//         std::cout << "Size Y: " << currentDungeon->size_y << std::endl;
-//         std::cout << "Size Z: " << currentDungeon->size_z << std::endl;
-//     }
-// }

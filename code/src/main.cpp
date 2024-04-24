@@ -142,6 +142,7 @@ void raylib()
 
     for(int i = 0; i < dungeonTabs.size();i++){
         dungeonTabs[i]->Shutdown();
+        delete dungeonTabs[i];
     }
 
     // Close

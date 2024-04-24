@@ -8,24 +8,37 @@ struct dungeonMatrix;
 class DungeonStat;
 
 class AlgorithmConfig : public DocumentWindow{
-    enum HelpSectionType{Title,Desc,Option,None};
-    
-    struct HelpSection{
+    enum HelpSectionType{Title,Option,None};
+    enum ValueType{Int,Flt,Str,Void};
+
+    struct HelpLine{
         HelpSectionType type;
+        ValueType valueType;
         std::string text;
-        char value[128] = "";
+        std::string desc;
+        char textValue[128] = "";
+        int intValue = 0;
+        float fltValue = 0.0;
+        bool use = false;
     };
 
     std::string dirpath;
     std::string filename;
     std::string outdirpath;
-    std::vector<HelpSection> options;
+    std::vector<HelpLine> optionsLines;
     bool configGenerated = false;
+
+    inline ValueType StringToValue(std::string str){
+        if(str=="str")return ValueType::Str;
+        if(str=="int")return ValueType::Int;
+        if(str=="flt")return ValueType::Flt;
+        return ValueType::Void;
+    }
     
     int pendingRuns = 0;
     bool runningAlgorithm = false;
     DungeonStat* statWindow = nullptr;
-    std::jthread * algorithmThread;
+    std::jthread * algorithmThread = nullptr;
    
     void GetHelp();
     void RunAlgorithm();
@@ -40,6 +53,10 @@ class AlgorithmConfig : public DocumentWindow{
     bool hasToGeneratePath = false;
 
     double dungeonTime = 0;
+
+    // Style
+    int argMaxCursor = 0;
+
 protected:
     void Show() override;
 public:
