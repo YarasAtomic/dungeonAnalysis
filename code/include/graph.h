@@ -23,23 +23,12 @@ public:
 
 struct DunState{
     Vector3Int agentPos;
-    bool TakeAction(Action action, dungeonMatrix * dungeon, DunState & newState);
-    // inline bool operator < (const DunState & other) const {
-    //     return 
-    //         (this->agentPos.x > other.agentPos.x)||
-    //         (this->agentPos.y > other.agentPos.y)||
-    //         (this->agentPos.z > other.agentPos.z);
-    // };
+    bool TakeAction(Action action, DungeonMatrix * dungeon, DunState & newState);
 };
 
 class ComparatorLess{
 public:
     bool operator()(const DunState & a, const DunState & b) const {
-        // return (
-        //     a.agentPos.x > b.agentPos.x ||
-        //     a.agentPos.y > b.agentPos.y ||
-        //     a.agentPos.z > b.agentPos.z
-        // );
         return std::tie(a.agentPos.x, a.agentPos.y, a.agentPos.z) < std::tie(b.agentPos.x, b.agentPos.y, b.agentPos.z);
     }
 };
@@ -50,13 +39,13 @@ struct Node{
     int accumulatedCost = 0;
     DunState state;
     inline bool operator < (const Node & other) const {return this->accumulatedCost > other.accumulatedCost;};
-    int CostDistance(dungeonMatrix * dungeon);
+    int CostDistance(DungeonMatrix * dungeon);
 };
 
 class Pathfinder{
-    dungeonMatrix * dungeon;
+    DungeonMatrix * dungeon;
 public:
-    Pathfinder(dungeonMatrix * dungeon);
+    Pathfinder(DungeonMatrix * dungeon);
     DungeonPath AStar(Vector3Int start,Vector3Int end);
 };
 

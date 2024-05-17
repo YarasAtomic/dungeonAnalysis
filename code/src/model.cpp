@@ -63,11 +63,11 @@ void calculateFlatNormals(std::vector<float> * vertices,std::vector<int> * indic
     }
 }
 
-Mesh meshFromDungeon(dungeonMatrix * dgn)
+Mesh meshFromDungeon(DungeonMatrix * dgn)
 {
-    int vm_size_x = dgn->size_x + 1;
-    int vm_size_y = dgn->size_y + 1;
-    int vm_size_z = dgn->size_z + 1;
+    int vm_size_x = dgn->GetSize().x + 1;
+    int vm_size_y = dgn->GetSize().y + 1;
+    int vm_size_z = dgn->GetSize().z + 1;
 
     Mesh mesh = {0};
 
@@ -77,13 +77,13 @@ Mesh meshFromDungeon(dungeonMatrix * dgn)
     std::vector<float> vertices;
     std::vector<float> normals;
 
-    for(int i = 0 ; i < dgn->size_x; i++)
+    for(unsigned int i = 0 ; i < dgn->GetSize().x; i++)
     {
-        for(int j = 0 ; j < dgn->size_y; j++)
+        for(unsigned int j = 0 ; j < dgn->GetSize().y; j++)
         {
-            for(int k = 0 ; k < dgn->size_z; k++)
+            for(unsigned int k = 0 ; k < dgn->GetSize().z; k++)
             {
-                if(dgn->data[i][j][k] & DUN_PXY_WALL)
+                if(dgn->GetPos({i,j,k}) & DUN_PXY_WALL)
                 {
                     // Front face
                     generateVertex(i,j,k,&indices,&vertices);
@@ -106,7 +106,7 @@ Mesh meshFromDungeon(dungeonMatrix * dgn)
 
                     mesh.triangleCount+=4;
                 }
-                if(dgn->data[i][j][k] & DUN_PXZ_WALL)
+                if(dgn->GetPos({i,j,k}) & DUN_PXZ_WALL)
                 {
                     // Top face
                     generateVertex(i,j,k,&indices,&vertices);
@@ -129,7 +129,7 @@ Mesh meshFromDungeon(dungeonMatrix * dgn)
 
                     mesh.triangleCount+=4;
                 }
-                if(dgn->data[i][j][k] & DUN_PYZ_WALL)
+                if(dgn->GetPos({i,j,k}) & DUN_PYZ_WALL)
                 {
                     // Front face
                     generateVertex(i,j,k,&indices,&vertices);
@@ -184,11 +184,11 @@ Mesh meshFromDungeon(dungeonMatrix * dgn)
     return mesh;
 }
 
-std::vector<Model> modelVectorFromDungeon(dungeonMatrix * dgn,Vector3Int chunkSize){
+std::vector<Model> modelVectorFromDungeon(DungeonMatrix * dgn,Vector3Int chunkSize){
     Vector3Int matrixSize;
-    matrixSize.x = dgn->size_x % chunkSize.x != 0 ? dgn->size_x / chunkSize.x + 1 : dgn->size_x / chunkSize.x;
-    matrixSize.y = dgn->size_y % chunkSize.y != 0 ? dgn->size_y / chunkSize.y + 1 : dgn->size_y / chunkSize.y;
-    matrixSize.z = dgn->size_z % chunkSize.z != 0 ? dgn->size_z / chunkSize.z + 1 : dgn->size_x / chunkSize.z;
+    matrixSize.x = dgn->GetSize().x % chunkSize.x != 0 ? dgn->GetSize().x / chunkSize.x + 1 : dgn->GetSize().x / chunkSize.x;
+    matrixSize.y = dgn->GetSize().y % chunkSize.y != 0 ? dgn->GetSize().y / chunkSize.y + 1 : dgn->GetSize().y / chunkSize.y;
+    matrixSize.z = dgn->GetSize().z % chunkSize.z != 0 ? dgn->GetSize().z / chunkSize.z + 1 : dgn->GetSize().x / chunkSize.z;
 
     std::vector<Model> models;
 
@@ -204,11 +204,11 @@ std::vector<Model> modelVectorFromDungeon(dungeonMatrix * dgn,Vector3Int chunkSi
 
 }
 
-Mesh meshFromDungeonSector(dungeonMatrix * dgn, Vector3Int chunkSize,Vector3Int chunkOrigin)
+Mesh meshFromDungeonSector(DungeonMatrix * dgn, Vector3Int chunkSize,Vector3Int chunkOrigin)
 {
-    int vm_size_x = dgn->size_x + 1;
-    int vm_size_y = dgn->size_y + 1;
-    int vm_size_z = dgn->size_z + 1;
+    int vm_size_x = dgn->GetSize().x + 1;
+    int vm_size_y = dgn->GetSize().y + 1;
+    int vm_size_z = dgn->GetSize().z + 1;
 
     Mesh mesh = {0};
 
@@ -220,14 +220,10 @@ Mesh meshFromDungeonSector(dungeonMatrix * dgn, Vector3Int chunkSize,Vector3Int 
 
     Vector3Int chunkEnd = {chunkOrigin.x + chunkSize.x,chunkOrigin.y + chunkSize.y,chunkOrigin.z + chunkSize.z};
 
-    for(int i = chunkOrigin.x ; i < dgn->size_x && i < chunkEnd.x; i++)
-    {
-        for(int j = chunkOrigin.y ; j < dgn->size_y && j < chunkEnd.y; j++)
-        {
-            for(int k = chunkOrigin.z ; k < dgn->size_z && k < chunkEnd.z; k++)
-            {
-                if(dgn->data[i][j][k] & DUN_PXY_WALL)
-                {
+    for(unsigned int i = chunkOrigin.x ; i < dgn->GetSize().x && i < chunkEnd.x; i++){
+        for(unsigned int j = chunkOrigin.y ; j < dgn->GetSize().y && j < chunkEnd.y; j++){
+            for(unsigned int k = chunkOrigin.z ; k < dgn->GetSize().z && k < chunkEnd.z; k++){
+                if(dgn->GetPos({i,j,k}) & DUN_PXY_WALL){
                     // Front face
                     generateVertex(i,j,k,&indices,&vertices);
                     generateVertex(i+1,j,k,&indices,&vertices);
@@ -249,8 +245,7 @@ Mesh meshFromDungeonSector(dungeonMatrix * dgn, Vector3Int chunkSize,Vector3Int 
 
                     mesh.triangleCount+=4;
                 }
-                if(dgn->data[i][j][k] & DUN_PXZ_WALL)
-                {
+                if(dgn->GetPos({i,j,k}) & DUN_PXZ_WALL){
                     // Top face
                     generateVertex(i,j,k,&indices,&vertices);
                     generateVertex(i+1,j,k,&indices,&vertices);
@@ -272,8 +267,7 @@ Mesh meshFromDungeonSector(dungeonMatrix * dgn, Vector3Int chunkSize,Vector3Int 
 
                     mesh.triangleCount+=4;
                 }
-                if(dgn->data[i][j][k] & DUN_PYZ_WALL)
-                {
+                if(dgn->GetPos({i,j,k}) & DUN_PYZ_WALL){
                     // Front face
                     generateVertex(i,j,k,&indices,&vertices);
                     generateVertex(i,j,k+1,&indices,&vertices);

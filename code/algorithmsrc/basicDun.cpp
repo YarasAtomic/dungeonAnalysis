@@ -6,35 +6,11 @@
 
 const int HALL_ID = 9999;
 
-void help()
-{
-    std::cout << "Dungeon's dimensions:" << std::endl;
-    std::cout << "\t-width\tdungeon's width" << std::endl;
-    std::cout << "\t-depth\tdungeon's depth" << std::endl;
-    std::cout << "\t-rmMinDepth\ta room's minimun depth" << std::endl;
-    std::cout << "\t-rmMaxDepth\ta room's maximun depth" << std::endl;
-    std::cout << "\t-rmMinWidth\ta room's minimun width" << std::endl;
-    std::cout << "\t-rmMaxWidth\ta room's maximun width" << std::endl;
-    std::cout << "\t-hallMin\ta hall's minimun length" << std::endl;
-    std::cout << "\t-hallMax\ta hall's maximun length" << std::endl;
-    std::cout << "Room chance:" << std::endl;
-    std::cout << "Each time a room spawns, it will try to spawn one more room at each side. ";
-    std::cout << "A number between 0 and {totalChance} will be generated, ";
-    std::cout << "if the number is less than {probability}, a room will spawn." << std::endl; 
-    std::cout << "\t-chance\tsets {totalChance} value" << std::endl;
-    std::cout << "\t-prob\tsets {probability} value" << std::endl;
-    std::cout << "General" << std::endl;
-    std::cout << "\t-o\toutput" << std::endl;
-    std::cout << "\t-seed\tgeneration seed" << std::endl;
-    std::cout << "\t-help --help\tshow this prompt" << std::endl;
-}
-
 // ---------------------------------------------------
 // ------------- GENERATION --------------------------
 // ---------------------------------------------------
 
-struct roomOptions
-{
+struct roomOptions{
     int maxRoomWidth;
     int minRoomWidth;
     int maxRoomDepth;
@@ -45,8 +21,7 @@ struct roomOptions
     int maxHallLength;
 };
 
-void printDungeon(std::vector<std::vector<int>> * dungeon)
-{
+void printDungeon(std::vector<std::vector<int>> * dungeon){
     std::cout << "\t";
     for(int i = 0; i < dungeon->size(); i+=2)
     {
@@ -85,12 +60,11 @@ void printDungeon(std::vector<std::vector<int>> * dungeon)
             else 
                 std::cout << "? ";
         }
-        std::cout << std::endl;
+        // std::cout << std::endl;
     } 
 }
 
-void generateHallTiles(int x, int y, int dir, int length,std::vector<std::vector<int>> * dungeon)
-{
+void generateHallTiles(int x, int y, int dir, int length,std::vector<std::vector<int>> * dungeon){
     int posX = 0;
     int posY = 0;
     for(int i = 0; i < length; i++)
@@ -119,8 +93,7 @@ void generateHallTiles(int x, int y, int dir, int length,std::vector<std::vector
     }
 }
 
-bool testHallTiles(int x, int y, int dir, int length,std::vector<std::vector<int>> * dungeon,int ignore)
-{
+bool testHallTiles(int x, int y, int dir, int length,std::vector<std::vector<int>> * dungeon,int ignore){
     bool valid = true;
 
     for(int i = 0; i < length; i++)
@@ -157,8 +130,7 @@ bool testHallTiles(int x, int y, int dir, int length,std::vector<std::vector<int
     return valid;
 }
 
-void generateRoomTiles(int x, int y, int roomWidth, int roomDepth,std::vector<std::vector<int>> * dungeon, int value)
-{
+void generateRoomTiles(int x, int y, int roomWidth, int roomDepth,std::vector<std::vector<int>> * dungeon, int value){
     int cornerX = x - roomWidth / 2;
     int cornerY = y - roomDepth / 2;
     for(int i = 0; i < roomWidth; i++)
@@ -173,8 +145,7 @@ void generateRoomTiles(int x, int y, int roomWidth, int roomDepth,std::vector<st
     }
 }
 
-bool testRoomTiles(int x, int y,int roomWidth, int roomDepth,std::vector<std::vector<int>> * dungeon)
-{
+bool testRoomTiles(int x, int y,int roomWidth, int roomDepth,std::vector<std::vector<int>> * dungeon){
     int cornerX = x - roomWidth / 2;
     int cornerY = y - roomDepth / 2;
     bool valid = true;
@@ -190,8 +161,7 @@ bool testRoomTiles(int x, int y,int roomWidth, int roomDepth,std::vector<std::ve
     return valid;
 }
 
-bool generateRoom(int x, int y,roomOptions opts,std::vector<std::vector<int>> * dungeon, int * value,int * endX,int * endY)
-{
+bool generateRoom(int x, int y,roomOptions opts,std::vector<std::vector<int>> * dungeon, int * value,int * endX,int * endY){
     int roomWidth = 0;
     int roomDepth = 0;
     int id = (*value);
@@ -257,8 +227,7 @@ bool generateRoom(int x, int y,roomOptions opts,std::vector<std::vector<int>> * 
     return false;
 }
 
-bool isSeparated(int origin,int other)
-{
+bool isSeparated(int origin,int other){
     if(origin < 0 && other == HALL_ID) return true;
     if(other < 0 && origin == HALL_ID) return true;
     if(other != HALL_ID && origin != HALL_ID)
@@ -270,12 +239,13 @@ bool isSeparated(int origin,int other)
     return false;
 }
 
-dungeonMatrix* vector2dungeon(std::vector<std::vector<int>> * dun)
-{
-    dungeonMatrix *matrix;
-    int sizeX = (*dun)[0].size();
-    int sizeY = dun->size();
-    allocDungeonMatrix(&matrix,sizeX,1,sizeY);
+DungeonMatrix* vector2dungeon(std::vector<std::vector<int>> * dun){
+    
+    int sizeY = (*dun)[0].size();
+    int sizeX = dun->size();
+    std::cout << "width " << sizeX << " depth " << sizeY << "\n";
+
+    DungeonMatrix *matrix = new DungeonMatrix(sizeX,1,sizeY);
 
     for(int i = 0; i < sizeX;i++)
     {
@@ -295,40 +265,34 @@ dungeonMatrix* vector2dungeon(std::vector<std::vector<int>> * dun)
             if(v>=0)
                 tile |= DUN_PXZ_WALL;
 
-            
-
-            matrix->data[i][0][j] = tile;
+            matrix->SetPos(i,0,j,tile);
         }
     }
 
     return matrix;
 }
 
-dungeonMatrix * generate(int width, int depth,roomOptions opts,int seed)
-{
+DungeonMatrix * generate(int width, int depth,roomOptions opts,int seed){
     srand (seed);
-
     std::vector<std::vector<int>> dungeon;
 
     dungeon.resize(width);
 
-    for(int i = 0; i < width ; i++)
-    {
+    for(int i = 0; i < width ; i++){
         dungeon[i].resize(depth);
-        for(int j = 0; j < depth; j++)
-        {
+        for(int j = 0; j < depth; j++){
             dungeon[i][j] = -1;
         }
     }
+
+    std::cout << "1\n";
 
     int defaultEndX = -1;
     int defaultEndY = -1;
 
     int * endX = &defaultEndX;
     int * endY = &defaultEndY;
-
-    if(width > opts.minRoomWidth && depth > opts.minRoomDepth)
-    {
+    if(width > opts.minRoomWidth && depth > opts.minRoomDepth){
         int originX = (rand() % (width - opts.minRoomWidth)) + opts.minRoomWidth / 2;
         int originY = (rand() % (depth - opts.minRoomDepth)) + opts.minRoomDepth / 2;
 
@@ -336,153 +300,80 @@ dungeonMatrix * generate(int width, int depth,roomOptions opts,int seed)
 
         generateRoom(width/2,depth/2,opts,&dungeon,&roomNumber,endX,endY);
     }
+    std::cout << "2\n";
 
-    printDungeon(&dungeon);
+    // printDungeon(&dungeon);
+    DungeonMatrix * dun = vector2dungeon(&dungeon);
+    std::cout << "3\n";
 
-    dungeonMatrix * dun = vector2dungeon(&dungeon);
-
-    dun->start_x = width/2;
-    dun->start_y = 0;
-    dun->start_z = depth/2;
-
-    dun->end_x = (*endX);
-    dun->end_y = 0;
-    dun->end_z = (*endY);
+    dun->SetStart(width/2,0,depth/2);
+    dun->SetEnd(*endX,0,*endY);
 
     return dun;
 }
 
 // ----------------------------------------------------
 
-int main(int args,char ** argv)
-{
+int main(int args,char ** argv){
     bool defaultArgs = true;
-    std::map<std::string,std::string> argMap = getArgMap(args,argv,&defaultArgs,&help);
-    int width = 64;
-    int depth = 64;
-    roomOptions opts;
-    opts.maxRoomDepth = 10;
-    opts.maxRoomWidth = 10;
-    opts.minRoomDepth = 5;
-    opts.minRoomWidth = 5;
-    opts.probability = 3;
-    opts.chanceTotal = 4;
-    opts.minHallLength = 10;
-    opts.maxHallLength = 15;
-
+    ArgHandler argHandler;
     std::random_device rd;
-
     int seed = rd();
-    std::string output = "a.dun";
+    argHandler.AddArg("width",64,"dungeon's width");
+    argHandler.AddArg("depth",64,"dungeon's depth");
+    argHandler.AddArg("rmMaxDepth",10,"a room's maximun depth");
+    argHandler.AddArg("rmMinDepth",5,"a room's minimun depth");
+    argHandler.AddArg("rmMaxWidth",10,"a room's maximun width");
+    argHandler.AddArg("rmMinWidth",5,"a room's minimun width");
+    argHandler.AddArg("hallMin",10,"a hall's minimun length");
+    argHandler.AddArg("hallMax",15,"a hall's maximun length");
+    argHandler.AddArg("chance",4,"sets {totalChance} value");
+    argHandler.AddArg("prob",3,"sets {probability} value");
 
-    auto findWidth = argMap.find("width");
-    if(findWidth != argMap.end())
-    {
-        if(isInteger(findWidth->second))
-            width = stoi(findWidth->second);
+    argHandler.AddStringArg("o","a.dun","output file name");
+
+    argHandler.AddArg("seed",seed,"dungeon's generation seed");
+
+    if(!argHandler.ReadArgs(args,argv)){
+        std::cout << "Dungeon's dimensions:" << std::endl;
+        argHandler.PrintHelp("width");
+        argHandler.PrintHelp("depth");
+        argHandler.PrintHelp("rmMaxDepth");
+        argHandler.PrintHelp("rmMinDepth");
+        argHandler.PrintHelp("rmMaxWidth");
+        argHandler.PrintHelp("rmMinWidth");
+        argHandler.PrintHelp("hallMin");
+        argHandler.PrintHelp("hallMax");
+        std::cout << "Room chance:\t";
+        std::cout << "Each time a room spawns, it will try to spawn one more room at each side. ";
+        std::cout << "A number between 0 and {totalChance} will be generated, ";
+        std::cout << "if the number is less than {probability}, a room will spawn." << std::endl; 
+        argHandler.PrintHelp("chance");
+        argHandler.PrintHelp("prob");
+        std::cout << "General" << std::endl;
+        argHandler.PrintHelp("seed");
+        argHandler.PrintHelp("o");
+        return 0;
     }
 
-    auto findDepth = argMap.find("depth");
-    if(findDepth != argMap.end())
-    {
-        if(isInteger(findDepth->second))
-            depth = stoi(findDepth->second);
+    roomOptions opts = {
+        argHandler.GetIntArg("rmMaxWidth"),
+        argHandler.GetIntArg("rmMinWidth"),
+        argHandler.GetIntArg("rmMaxDepth"),
+        argHandler.GetIntArg("rmMinDepth"),
+        argHandler.GetIntArg("chance"),
+        argHandler.GetIntArg("prob"),
+        argHandler.GetIntArg("hallMin"),
+        argHandler.GetIntArg("hallMax")
+    };
+
+    DungeonMatrix * dun = generate(argHandler.GetIntArg("width"),argHandler.GetIntArg("depth"),opts,argHandler.GetIntArg("seed"));
+    std::cout << "4\n";
+    if(dun->Dun2File(argHandler.GetStringArg("o"))){
+        std::cout << "archivo generado" << std::endl;
     }
-
-    auto findMinDepth = argMap.find("rmMinDepth");
-    if(findMinDepth != argMap.end())
-    {
-        if(isInteger(findMinDepth->second))
-            opts.minRoomDepth = stoi(findMinDepth->second);
+    else{
+        std::cout << "el archivo no se ha podido generar" << std::endl;
     }
-
-    auto findMaxDepth = argMap.find("rmMaxDepth");
-    if(findMaxDepth != argMap.end())
-    {
-        if(isInteger(findMaxDepth->second))
-            opts.maxRoomDepth = stoi(findMaxDepth->second);
-    }
-
-    auto findMinWidth = argMap.find("rmMinWidth");
-    if(findMinWidth != argMap.end())
-    {
-        if(isInteger(findMinWidth->second))
-            opts.minRoomWidth = stoi(findMinWidth->second);
-    }
-
-    auto findMaxWidth = argMap.find("rmMaxWidth");
-    if(findMaxWidth != argMap.end())
-    {
-        if(isInteger(findMaxWidth->second))
-            opts.maxRoomWidth = stoi(findMaxWidth->second);
-    }
-
-    auto findhallMax = argMap.find("hallMax");
-    if(findhallMax != argMap.end())
-    {
-        if(isInteger(findhallMax->second))
-            opts.maxHallLength = stoi(findhallMax->second);
-    }
-
-    auto findhallMin = argMap.find("hallMin");
-    if(findhallMin != argMap.end())
-    {
-        if(isInteger(findhallMin->second))
-            opts.minHallLength = stoi(findhallMin->second);
-    }
-
-    auto findChance = argMap.find("chance");
-    if(findChance != argMap.end())
-    {
-        if(isInteger(findChance->second))
-            opts.chanceTotal = stoi(findChance->second);
-    }
-
-    auto findProbability = argMap.find("prob");
-    if(findProbability != argMap.end())
-    {
-        if(isInteger(findProbability->second))
-            opts.probability = stoi(findProbability->second);
-    }
-
-    auto findSeed = argMap.find("seed");
-    if(findSeed != argMap.end())
-    {
-        if(isInteger(findSeed->second))
-            seed = stoi(findSeed->second);
-    }
-
-    auto findOutput = argMap.find("o");
-    if(findOutput != argMap.end())
-    {
-        output = findOutput->second;
-    }
-
-    if(!argMap.empty()||defaultArgs)
-    {
-        std::cout << "WIDTH: " << width << std::endl;
-        std::cout << "DEPTH: " << depth << std::endl;
-        std::cout << "----------------" << std::endl;
-        std::cout << "MAX ROOM WIDTH: " << opts.maxRoomWidth << std::endl;
-        std::cout << "MIN ROOM WIDTH: " << opts.minRoomWidth << std::endl;
-        std::cout << "MAX ROOM DEPTH: " << opts.maxRoomDepth << std::endl;
-        std::cout << "MIN ROOM DEPTH: " << opts.minRoomDepth << std::endl;  
-        std::cout << "MAX HALL LENGTH: " << opts.maxHallLength << std::endl;
-        std::cout << "MIN HALL LENGTH: " << opts.minHallLength << std::endl;
-        std::cout << "TOTAL CHANCE: " << opts.chanceTotal << std::endl;
-        std::cout << "PROBABILITY: " << opts.probability << std::endl;
-        std::cout << "----------------" << std::endl;
-        std::cout << "SEED:" << seed << std::endl;
-
-        dungeonMatrix * dun = generate(width,depth,opts,seed);
-
-        if(dun2File(dun,output))
-        {
-            std::cout << "archivo generado" << std::endl;
-        }
-        else
-        {
-            std::cout << "el archivo no se ha podido generar" << std::endl;
-        }
-    }
+    
 }

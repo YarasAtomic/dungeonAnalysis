@@ -2,52 +2,6 @@
 #include <fstream>
 #include <iostream>
 
-std::map<std::string,std::string> getArgMap(int args,char ** argv,bool * defaultArgs, void (*help)(void))
-{
-    bool readingValues = false;
-    bool validArgs = true;
-    std::pair<std::string,std::string> currentPair;
-    std::map<std::string,std::string> out;
-    for(int i = 1; i < args && validArgs;i++)
-    {
-        if(!readingValues)
-        {
-            if(argv[i][0]!='-')
-            {
-                validArgs = false;
-            }
-            else
-            {
-                currentPair.first = "";
-                int j = 1;
-                while(argv[i][j]!='\0')
-                {
-                    currentPair.first+=argv[i][j];
-                    
-                    j++;
-                }
-                readingValues = true;
-                if(currentPair.first == "help" || currentPair.first == "-help")
-                {
-                    help();
-                    readingValues = false;
-                    validArgs = false;
-                }
-            }
-        }
-        else
-        {
-            currentPair.second = std::string(argv[i]);
-            out.insert(currentPair);
-            readingValues = false;
-        }
-        
-    }
-    (*defaultArgs) = args == 1 ? true : false;
-    if (!validArgs) return std::map<std::string,std::string>();
-    return out;
-}
-
 void ArgHandler::AddArg(std::string key,int defaultValue,std::string description){
     if(argEntries.find(key)==argEntries.end()){
         ArgEntry newArg;
@@ -176,166 +130,196 @@ bool isInteger(const std::string & s)
    return (*p == 0);
 }
 
-void allocDungeonMatrix(dungeonMatrix **dungeon,unsigned int sizeX,unsigned int sizeY, unsigned int sizeZ)
-{
-    (*dungeon)= static_cast<struct dungeonMatrix*>(malloc(sizeof(struct dungeonMatrix)));
-
-    unsigned int *** data = (unsigned int ***)malloc(sizeX * sizeof(unsigned int **));
-    for(int i = 0 ; i < sizeX; i++)
-    {
-        data[i] = (unsigned int **)malloc(sizeY * sizeof(unsigned int *));
-        for(int j = 0 ; j < sizeY; j++)
-            data[i][j] = (unsigned int *)malloc(sizeZ * sizeof(unsigned int));
-    }
-
-    (*dungeon)->data = data;
-    (*dungeon)->size_x = sizeX;
-    (*dungeon)->size_y = sizeY;
-    (*dungeon)->size_z = sizeZ;
+DungeonMatrix::DungeonMatrix(int sizeX,int sizeY,int sizeZ){
+    data = new unsigned int[sizeX*sizeY*sizeZ];
+    size_x = sizeX;
+    size_y = sizeY;
+    size_z = sizeZ;
 }
 
-void freeDungeonMatrix(dungeonMatrix ** matrix)
-{
-    if (*matrix) {
-        for (unsigned int i = 0; i < (*matrix)->size_x; i++) {
-            for (unsigned int j = 0; j < (*matrix)->size_y; j++) {
-                delete[] (*matrix)->data[i][j];
-            }
-            delete[] (*matrix)->data[i];
-        }
-        delete[] (*matrix)->data;
-        delete (*matrix);
-    }
+DungeonMatrix::DungeonMatrix(dunVec3 size){
+    DungeonMatrix(size.x,size.y,size.z);
 }
 
-bool dun2File(dungeonMatrix * dun,std::string filename)
-{
-    int sizeX = dun->size_x;
-    int sizeY = dun->size_y;
-    int sizeZ = dun->size_z;
+DungeonMatrix::DungeonMatrix(const DungeonMatrix&other){
+    size_x = other.size_x;
+    size_y = other.size_y;
+    size_z = other.size_z;
+    start_x = other.start_x;
+    start_y = other.start_y;
+    start_z = other.start_z;
+    end_x = other.end_x;
+    end_y = other.end_y;
+    end_z = other.end_z;
 
-    std::ofstream file(filename,std::ofstream::trunc);
-    if(file.is_open())
-    {
-        file << "dungeonMatrix-2\n";
-        file << sizeX << " ";
-        file << sizeY << " ";
-        file << sizeZ << " ";
+    data = new unsigned int(size_x*size_y*size_z);
 
-        file << dun->start_x << " ";
-        file << dun->start_y << " ";
-        file << dun->start_z << " ";
-
-        file << dun->end_x << " ";
-        file << dun->end_y << " ";
-        file << dun->end_z << " ";
-
-        for (int i = 0; i < sizeX; i++)
-        {
-            for(int j = 0; j < sizeY; j++)
-            {
-                for(int k = 0; k < sizeZ; k++)
-                {
-                    file.write((char*)&(dun->data[i][j][k]),sizeof(unsigned int));
-                }
-            }
-        }
-        // file.write(reinterpret_cast<char*>(dun->data), sizeof(unsigned int) * sizeX*sizeY*sizeZ);
-        // file.write((char*)(dun->data),sizeof(unsigned int)*sizeX*sizeY*sizeZ);
-        file.close();
-        return true;
-    }
-    return false;
+    unsigned int dataSize = size_x * size_y * size_z;
+    for(int i = 0; i < dataSize; i ++)
+        data[i] = other.data[i];
 }
 
-bool file2Dun(dungeonMatrix ** dun, std::string filename)
-{
+DungeonMatrix::~DungeonMatrix(){
+    delete[] data;
+}
+
+bool DungeonMatrix::File2Dun(std::string filename){
     std::ifstream file(filename);
-    if(file.is_open())
-    {
+    if(file.is_open()){
         std::string header;
-        int sizeX;
-        int sizeY;
-        int sizeZ;
-        int startX = -1;
-        int startY = -1;
-        int startZ = -1;
-        int endX = -1;
-        int endY = -1;
-        int endZ = -1;
         file >> header;
-
-        // std::cout << "header: " << header << std::endl;
-
-        if(header=="dungeonMatrix-1")
-        {
-            file >> sizeX;
-            file >> sizeY;
-            file >> sizeZ;
+        if(header=="dungeonMatrix-1"){
+            file >> size_x;
+            file >> size_y;
+            file >> size_z;
+            start_x = 0;
+            start_y = 0;
+            start_z = 0;
+            end_x = 0;
+            end_y = 0;
+            end_z = 0;
             char c;
             file.read((char*)&c,sizeof(char));
-
-            allocDungeonMatrix(dun,sizeX,sizeY,sizeZ);
-
-            for (int i = 0; i < sizeX; i++)
-            {
-                for(int j = 0; j < sizeY; j++)
-                {
-                    for(int k = 0; k < sizeZ; k++)
-                    {
-                        unsigned int v;
-                        file.read((char*)(&v),sizeof(unsigned int));
-                        (*dun)->data[i][j][k] = v;
-                    }
-                }
+            unsigned int dataSize = size_x * size_y * size_z;
+            delete[] data;
+            data = new unsigned int[dataSize];
+            for (int i = 0; i < dataSize; i++){
+                unsigned int v;
+                file.read((char*)(&v),sizeof(unsigned int));
+                data[i]= v;
             }
             
             file.close();
 
             return true;
         } 
-        else if(header=="dungeonMatrix-2")
-        {
-            file >> sizeX;
-            file >> sizeY;
-            file >> sizeZ;
-            file >> startX;
-            file >> startY;
-            file >> startZ;
-            file >> endX;
-            file >> endY;
-            file >> endZ;
+        else if(header=="dungeonMatrix-2"){
+            file >> size_x;
+            file >> size_y;
+            file >> size_z;
+            file >> start_x;
+            file >> start_y;
+            file >> start_z;
+            file >> end_x;
+            file >> end_y;
+            file >> end_z;
+            
             char c;
             file.read((char*)&c,sizeof(char));
-
-            allocDungeonMatrix(dun,sizeX,sizeY,sizeZ);
-
-            for (int i = 0; i < sizeX; i++)
-            {
-                for(int j = 0; j < sizeY; j++)
-                {
-                    for(int k = 0; k < sizeZ; k++)
-                    {
-                        unsigned int v;
-                        file.read((char*)(&v),sizeof(unsigned int));
-                        (*dun)->data[i][j][k] = v;
-                    }
-                }
+            unsigned int dataSize = size_x * size_y * size_z;
+            delete[] data;
+            data = new unsigned int[dataSize];
+            for (int i = 0; i < dataSize; i++){
+                unsigned int v;
+                file.read((char*)(&v),sizeof(unsigned int));
+                data[i] = v;
             }
 
-            (*dun)->start_x = startX;
-            (*dun)->start_y = startY;
-            (*dun)->start_z = startZ;
-
-            (*dun)->end_x = endX;
-            (*dun)->end_y = endY;
-            (*dun)->end_z = endZ;
-            
             file.close();
-
+            
             return true;
         }
         file.close(); 
     }
     return false;
+}
+
+bool DungeonMatrix::Dun2File(std::string filename){
+    std::ofstream file(filename,std::ofstream::trunc);
+    if(file.is_open()){
+        file << "dungeonMatrix-2\n";
+        file << size_x << " ";
+        file << size_y << " ";
+        file << size_z << " ";
+
+        file << start_x << " ";
+        file << start_y << " ";
+        file << start_z << " ";
+
+        file << end_x << " ";
+        file << end_y << " ";
+        file << end_z << " ";
+
+        unsigned int dataSize = size_x * size_y * size_z;
+
+        for(int i = 0; i < dataSize; i++)
+            file.write((char*)&(data[i]),sizeof(unsigned int));
+        file.close();
+        return true;
+    }
+    return false;
+}
+
+dunVec3 DungeonMatrix::GetStart(){
+    dunVec3 out = {start_x,start_y,start_z};
+    return out;
+}
+
+void DungeonMatrix::SetStart(dunVec3 pos){
+    start_x = pos.x;
+    start_y = pos.y;
+    start_z = pos.z;
+}
+
+void DungeonMatrix::SetStart(unsigned int x,unsigned int y ,unsigned int z){
+    SetStart({x,y,z});
+}
+
+unsigned int DungeonMatrix::Pos2Index(unsigned int x,unsigned int y,unsigned int z){
+    return x + y * size_x + z * size_x * size_y;
+}
+
+dunVec3 DungeonMatrix::GetEnd(){
+    dunVec3 out = {end_x,end_y,end_z};
+    return out;
+}
+
+void DungeonMatrix::SetEnd(dunVec3 pos){
+    end_x = pos.x;
+    end_y = pos.y;
+    end_z = pos.z;
+}
+
+void DungeonMatrix::SetEnd(unsigned int x,unsigned int y ,unsigned int z){
+    SetEnd({x,y,z});
+}
+
+dunVec3 DungeonMatrix::GetSize(){
+    dunVec3 out = {size_x,size_y,size_z};
+    return out;
+}
+unsigned int DungeonMatrix::GetPos(dunVec3 pos){
+    return data[Pos2Index(pos.x,pos.y,pos.z)];
+}
+
+void DungeonMatrix::SetPos(dunVec3 pos, unsigned int v){
+    data[Pos2Index(pos.x,pos.y,pos.z)] = v;
+}
+
+void DungeonMatrix::AddPos(dunVec3 pos, unsigned int v){
+    data[Pos2Index(pos.x,pos.y,pos.z)] |= v;
+}
+
+void DungeonMatrix::RemovePos(dunVec3 pos, unsigned int v){
+    data[Pos2Index(pos.x,pos.y,pos.z)] &= ~v;
+}
+
+bool DungeonMatrix::CheckPos(dunVec3 pos, unsigned int v){
+    return data[Pos2Index(pos.x,pos.y,pos.z)] & v;
+}
+
+void DungeonMatrix::SetPos(unsigned int x, unsigned int y, unsigned int z, unsigned int v){
+    data[Pos2Index(x,y,z)] = v;
+}
+
+void DungeonMatrix::AddPos(unsigned int x, unsigned int y, unsigned int z, unsigned int v){
+    data[Pos2Index(x,y,z)] |= v;
+}
+
+void DungeonMatrix::RemovePos(unsigned int x, unsigned int y, unsigned int z, unsigned int v){
+    data[Pos2Index(x,y,z)] &= ~v;
+}
+
+bool DungeonMatrix::CheckPos(unsigned int x, unsigned int y, unsigned int z, unsigned int v){
+    return data[Pos2Index(x,y,z)] & v;
 }

@@ -17,16 +17,6 @@
 // El laberinto generado, es conexo, no tiene ciclos. Por esa razón, el laberinto se puede resolver girando siempre a la derecha.
 // Topologicamente hablando, este laberinto es un circulo
 
-void help()
-{
-    std::cout << "Dungeon's dimensions:" << std::endl;
-    std::cout << "\t-width\tdungeon's width" << std::endl;
-    std::cout << "\t-depth\tdungeon's depth" << std::endl;
-    std::cout << "General" << std::endl;
-    std::cout << "\t-o\toutput" << std::endl;
-    std::cout << "\t-seed\tgeneration seed" << std::endl;
-    std::cout << "\t-help --help\tshow this prompt" << std::endl;
-}
 
 // ---------------------------------------------------
 // ------------- GENERATION --------------------------
@@ -38,36 +28,33 @@ struct dunTile
     short walkDir = -1;
 };
 
-dungeonMatrix* vector2dungeon(std::vector<std::vector<dunTile>> * dun)
+DungeonMatrix* vector2dungeon(std::vector<std::vector<dunTile>> * dun)
 {
-    dungeonMatrix *matrix;
+    DungeonMatrix *matrix;
     int sizeY = (*dun)[0].size();
     int sizeX = dun->size();
-    allocDungeonMatrix(&matrix,sizeX,1,sizeY);
 
-    for(int i = 0; i < sizeX;i++){
-        for(int j = 0; j < sizeY;j++){
-            matrix->data[i][0][j] = (DUN_PYZ_WALL|DUN_PXZ_WALL|DUN_PXY_WALL);
-        }
-    }
+    matrix = new DungeonMatrix(sizeX,1,sizeY);
+
+    for(int i = 0; i < sizeX;i++)
+        for(int j = 0; j < sizeY;j++)
+            matrix->SetPos(i,0,j,(DUN_PYZ_WALL|DUN_PXZ_WALL|DUN_PXY_WALL));
 
     for(int i = 0; i < sizeX;i++){
         for(int j = 0; j < sizeY;j++){
             switch ((*dun)[i][j].walkDir)
             {
             case 0:
-                std::cout << "YZ " << matrix->data[i][0][j] ;
-                matrix->data[i][0][j] &= ~DUN_PYZ_WALL;
-                std::cout << " " << matrix->data[i][0][j] << std::endl;
+                matrix->RemovePos(i,0,j,DUN_PYZ_WALL);
                 break;
             case 1:
-                matrix->data[i+1][0][j] &= ~DUN_PYZ_WALL;
+                matrix->RemovePos(i+1,0,j,DUN_PYZ_WALL);
                 break;
             case 2:
-                matrix->data[i][0][j] &= ~DUN_PXY_WALL;
+                matrix->RemovePos(i,0,j,DUN_PXY_WALL);
                 break;
             case 3:
-                matrix->data[i][0][j+1] &= ~DUN_PXY_WALL;
+                matrix->RemovePos(i,0,j+1,DUN_PXY_WALL);
                 break;
             default:
                 break;
@@ -113,7 +100,7 @@ int nextTile(std::pair<int,int> *pos,std::vector<std::vector<dunTile>> * dunTile
     return dir;
 }
 
-dungeonMatrix * generate(int width, int depth,int seed) //O(n²log(n))
+DungeonMatrix * generate(int width, int depth,int seed) //O(n²log(n))
 {
     srand (seed);
     int end_x = 0;
@@ -183,15 +170,10 @@ dungeonMatrix * generate(int width, int depth,int seed) //O(n²log(n))
     }
 
 
-    dungeonMatrix * dun = vector2dungeon(&dungeon);
+    DungeonMatrix * dun = vector2dungeon(&dungeon);
 
-    dun->start_x = start_x;
-    dun->start_y = 0;
-    dun->start_z = start_y;
-
-    dun->end_x = end_x;
-    dun->end_y = 0;
-    dun->end_z = end_y;
+    dun->SetStart(start_x,0,start_y);
+    dun->SetEnd(end_x,0,end_y);
 
     return dun;
 }
@@ -200,58 +182,37 @@ dungeonMatrix * generate(int width, int depth,int seed) //O(n²log(n))
 
 int main(int args,char ** argv)
 {
-    bool defaultArgs = true;
-    std::map<std::string,std::string> argMap = getArgMap(args,argv,&defaultArgs,&help);
-    int width = 4;
-    int depth = 4;
-
     std::random_device rd;
     int seed = rd();
-    std::string output = "a.dun";
 
-    auto findWidth = argMap.find("width");
-    if(findWidth != argMap.end())
-    {
-        if(isInteger(findWidth->second))
-            width = stoi(findWidth->second);
+    ArgHandler argHandler;
+    argHandler.AddArg("width",10,"dungeon's width");
+    argHandler.AddArg("depth",10,"dungeon's depth");
+
+    argHandler.AddStringArg("o","a.dun","output file name");
+
+    argHandler.AddArg("seed",seed,"dungeon's generation seed");
+
+    if(!argHandler.ReadArgs(args,argv)){
+        std::cout << "Dungeon's dimensions:" << std::endl;
+        argHandler.PrintHelp("width");
+        argHandler.PrintHelp("depth");
+        std::cout << "General:" << std::endl;
+        argHandler.PrintHelp("seed");
+        argHandler.PrintHelp("o");
+        return 0;
     }
 
-    auto findDepth = argMap.find("depth");
-    if(findDepth != argMap.end())
-    {
-        if(isInteger(findDepth->second))
-            depth = stoi(findDepth->second);
+    DungeonMatrix * dun = generate(
+        argHandler.GetIntArg("width"),
+        argHandler.GetIntArg("depth"),
+        argHandler.GetIntArg("seed"));
+
+    if(dun->Dun2File(argHandler.GetStringArg("o"))){
+        std::cout << "archivo generado" << std::endl;
     }
-
-    auto findSeed = argMap.find("seed");
-    if(findSeed != argMap.end())
-    {
-        if(isInteger(findSeed->second))
-            seed = stoi(findSeed->second);
+    else{
+        std::cout << "el archivo no se ha podido generar" << std::endl;
     }
-
-    auto findOutput = argMap.find("o");
-    if(findOutput != argMap.end())
-    {
-        output = findOutput->second;
-    }
-
-    if(!argMap.empty()||defaultArgs)
-    {
-        std::cout << "WIDTH: " << width << std::endl;
-        std::cout << "DEPTH: " << depth << std::endl;
-        std::cout << "----------------" << std::endl;
-        std::cout << "SEED:" << seed << std::endl;
-
-        dungeonMatrix * dun = generate(width,depth,seed);
-
-        if(dun2File(dun,output))
-        {
-            std::cout << "archivo generado" << std::endl;
-        }
-        else
-        {
-            std::cout << "el archivo no se ha podido generar" << std::endl;
-        }
-    }
+    
 }

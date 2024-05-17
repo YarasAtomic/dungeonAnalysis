@@ -144,10 +144,10 @@ void DungeonView::Update(){
             dungeonModels = modelVectorFromDungeon(stats->currentDungeon,{8,8,8});
             // dungeonModel = LoadModelFromMesh(meshFromDungeon(stats->currentDungeon));
 
-            dungeonPos.x = - (float)stats->currentDungeon->size_x/2;
+            dungeonPos.x = - (float)stats->currentDungeon->GetSize().x/2;
             // dungeonPos.y = - (float)currentDungeon->size_y/2;
             dungeonPos.y = 0;
-            dungeonPos.z = - (float)stats->currentDungeon->size_z/2;
+            dungeonPos.z = - (float)stats->currentDungeon->GetSize().z/2;
             for(auto model : dungeonModels) model.materials[0].shader = lightingShader;
             // dungeonModel.materials[0].shader = lightingShader; //!
 
@@ -278,7 +278,7 @@ void DungeonView::InteractionModeUpdate(Vector3 & playerPos){
 
 void DungeonView::SetCameraDefault(){
     if(stats!=nullptr&&stats->currentDungeon!=nullptr)
-        cameraDistance = stats->currentDungeon->size_x+stats->currentDungeon->size_z;
+        cameraDistance = stats->currentDungeon->GetSize().x+stats->currentDungeon->GetSize().z;
     else
         cameraDistance = 10;
     cameraAngle = {DEG2RAD * 45,DEG2RAD * 45};

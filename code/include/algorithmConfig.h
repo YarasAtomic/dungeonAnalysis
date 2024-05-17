@@ -3,7 +3,7 @@
 
 #include <thread>
 #include "ui.h"
-struct dungeonMatrix;
+struct DungeonMatrix;
 
 class DungeonStat;
 
@@ -61,7 +61,7 @@ protected:
     void Show() override;
 public:
     bool hasToUpdateStats = false;
-    dungeonMatrix * currentDungeon;
+    DungeonMatrix * currentDungeon;
 
     AlgorithmConfig(std::string name,std::string path,std::string out);
     void Setup() override;

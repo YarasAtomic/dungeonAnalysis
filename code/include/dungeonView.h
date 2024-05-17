@@ -49,7 +49,7 @@ class DungeonView : public DocumentWindow{
     
     void enterPlayMode();
 
-    void playerModeUpdate(dungeonMatrix * dungeon,Vector3 dungeonPos,Vector3 & playerPos);
+    void playerModeUpdate(DungeonMatrix * dungeon,Vector3 dungeonPos,Vector3 & playerPos);
 
     void InteractionModeUpdate(Vector3 & playerPos);
     void InteractionModePasiveUpdate();

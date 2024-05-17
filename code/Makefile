@@ -27,8 +27,8 @@ renderer: $(SRC_OBJ)
 	$(CXX) -o $(RENDERBIN) $(OBJDIR)/*.o $(LIBS) `pkg-config --libs gtk+-3.0` $(LDFLAGS) 
 # g++ -std=c++20 ./src/*.cpp $(TOOLDIR)/*.cpp ./imgui/*.cpp -I ./include -I ./imgui -I /usr/include -I /usr/local/include -o $(RENDERBIN) 
 
-basicDun wilsonMaze binarySpace: algorithm
-	$(CXX) $(TOOLDIR)/*.cpp ./algorithmsrc/$@.cpp -I ./include -g -o ./algorithm/$@
+basicDun wilsonMaze binarySpace depthFirstMaze: algorithm
+	$(CXX) -std=c++20 $(TOOLDIR)/*.cpp ./algorithmsrc/$@.cpp -I ./include -g -o ./algorithm/$@
 
 test: $(TOOL_OBJ)
 	echo hola

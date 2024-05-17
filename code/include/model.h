@@ -5,14 +5,14 @@
 #include <vector>
 #include "ezdungeon.h"
 
-struct dungeonMatrix;
+class DungeonMatrix;
 
-Mesh meshFromDungeon(dungeonMatrix * dgn);
+Mesh meshFromDungeon(DungeonMatrix * dgn);
 
-Mesh meshFromDungeonSector(dungeonMatrix * dgn, Vector3Int chunkSize, Vector3Int dungeonOrigin);
+Mesh meshFromDungeonSector(DungeonMatrix * dgn, Vector3Int chunkSize, Vector3Int dungeonOrigin);
 
 void generateVertex(int x,int y,int z,std::vector<int>* indices, std::vector<float> *vertices, int *** vertexMatrix,unsigned int * nIndices);
 
-std::vector<Model> modelVectorFromDungeon(dungeonMatrix * dgn , Vector3Int chunkSize);
+std::vector<Model> modelVectorFromDungeon(DungeonMatrix * dgn , Vector3Int chunkSize);
 
 #endif

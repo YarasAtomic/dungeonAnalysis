@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-void genSimple(dungeonMatrix * fileMatrix,std::string outputFile){
+void genSimple(DungeonMatrix * fileMatrix,std::string outputFile){
 	std::ofstream file(outputFile,std::ofstream::trunc);
 	file << "mapFile" << "\n";
 	file << fileMatrix->size_x << "\n";
@@ -26,7 +26,7 @@ void genSimple(dungeonMatrix * fileMatrix,std::string outputFile){
 	file.close();
 }
 
-void genBig(dungeonMatrix * fileMatrix,std::string outputFile){
+void genBig(DungeonMatrix * fileMatrix,std::string outputFile){
 	std::ofstream file(outputFile,std::ofstream::trunc);
 	file << "mapFile" << "\n";
 	int sizeX = fileMatrix->size_x*2;
@@ -80,7 +80,7 @@ int main(int args, char ** argv)
 		std::string inputFile = argv[1];
 		std::string outputFile = "map.txt";
 		if(args>=3) outputFile = argv[2];
-		dungeonMatrix * fileMatrix;
+		DungeonMatrix * fileMatrix;
 		file2Dun(&fileMatrix,"../test.dun");
 		// genSimple(fileMatrix,outputFile);
 		genBig(fileMatrix,outputFile);

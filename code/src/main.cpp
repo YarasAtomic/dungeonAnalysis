@@ -7,9 +7,7 @@
 #include "dungeonList.h"
 #include "algorithmConfig.h"
 
-// #include "rlImGui.h"
-
-void playerModeUpdate(dungeonMatrix *,Vector3,Vector2&,Vector3&);
+void playerModeUpdate(DungeonMatrix *,Vector3,Vector2&,Vector3&);
 
 AlgorithmList algorithmList;
 DungeonList dungeonList;
@@ -97,7 +95,6 @@ void raylib()
         }
 
         // Demo -------
-
         if(imGuiDemoOpen)
             ImGui::ShowDemoWindow(&imGuiDemoOpen);
 

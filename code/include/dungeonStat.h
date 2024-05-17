@@ -4,7 +4,7 @@
 #include "ui.h"
 #include "graph.h"
 #include "densityMap.h"
-struct dungeonMatrix;
+struct DungeonMatrix;
 
 class DungeonView;
 
@@ -53,7 +53,7 @@ class DungeonStat : public DocumentWindow{
 protected:
     void Show() override;
 public:
-    dungeonMatrix * currentDungeon = nullptr;
+    DungeonMatrix * currentDungeon = nullptr;
     bool hasToUpdateView = false;
     bool hasToGeneratePath = false;
     bool hasToSave = false;

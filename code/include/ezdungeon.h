@@ -39,10 +39,6 @@ public:
     void PrintHelp(std::string);
 };
 
-std::map<std::string,std::string> getArgMap(int args,char ** argv,bool * defaultArgs,void (*help)(void));
-
-// void help();
-
 bool isInteger(const std::string & s);
 
 const unsigned int DUN_FULL_BLOCK = 1;
@@ -54,25 +50,51 @@ const unsigned int DUN_PXY_VAR = 32;
 const unsigned int DUN_PXZ_VAR = 64;
 const unsigned int DUN_PYZ_VAR = 128;
 
-struct dungeonMatrix {
-    unsigned int *** data;
+typedef struct dunVec3{
+    unsigned int x;
+    unsigned int y;
+    unsigned int z;
+} dunVec3;
+
+class DungeonMatrix {
+    unsigned int * data;
     unsigned int size_x = 0;
     unsigned int size_y = 0;
     unsigned int size_z = 0;
-    unsigned int start_x = -1;
-    unsigned int start_y = -1;
-    unsigned int start_z = -1;
-    unsigned int end_x = -1;
-    unsigned int end_y = -1;
-    unsigned int end_z = -1;
+    unsigned int start_x = 0;
+    unsigned int start_y = 0;
+    unsigned int start_z = 0;
+    unsigned int end_x = 0;
+    unsigned int end_y = 0;
+    unsigned int end_z = 0;
+
+    unsigned int Pos2Index(unsigned int ,unsigned int ,unsigned int );
+public:
+    DungeonMatrix(std::string filename);
+    DungeonMatrix(int,int,int);
+    DungeonMatrix(dunVec3);
+    DungeonMatrix(const DungeonMatrix&);
+    ~DungeonMatrix();
+
+    void SetStart(unsigned int,unsigned int,unsigned int);
+    void SetStart(dunVec3);
+    void SetEnd(unsigned int,unsigned int,unsigned int);
+    void SetEnd(dunVec3);
+    dunVec3 GetSize();
+    dunVec3 GetStart();
+    dunVec3 GetEnd();
+    unsigned int GetPos(dunVec3);
+    void SetPos(dunVec3,unsigned int);
+    void AddPos(dunVec3,unsigned int);
+    void RemovePos(dunVec3,unsigned int);
+    bool CheckPos(dunVec3,unsigned int);
+    void SetPos(unsigned int,unsigned int,unsigned int,unsigned int);
+    void AddPos(unsigned int,unsigned int,unsigned int,unsigned int);
+    void RemovePos(unsigned int,unsigned int,unsigned int,unsigned int);
+    bool CheckPos(unsigned int,unsigned int,unsigned int,unsigned int);
+
+    bool Dun2File(std::string filename);
+    bool File2Dun(std::string filename);
 };
-
-void allocDungeonMatrix(dungeonMatrix **dungeon,unsigned int sizeX,unsigned int sizeY, unsigned int sizeZ);
-
-void freeDungeonMatrix(dungeonMatrix ** matrix);
-
-bool dun2File(dungeonMatrix * dun, std::string filename);
-
-bool file2Dun(dungeonMatrix ** dun, std::string filename);
 
 #endif

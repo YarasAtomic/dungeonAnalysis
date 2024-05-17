@@ -34,27 +34,25 @@ void DungeonStat::SaveStats(){
     }
 
     fout.close();
-  
 }
-
 
 
 void DungeonStat::Import(bool batchImport){
     batch = batchImport;
     if(!batch)
         std::cout << "importing: " << dunpath << std::endl;
-    if(currentDungeon!=nullptr)
-        freeDungeonMatrix(&currentDungeon);
-    bool dungeonImported = file2Dun(&currentDungeon,dunpath);
+    if(currentDungeon==nullptr)
+        currentDungeon = new DungeonMatrix(0,0,0);
+    bool dungeonImported = currentDungeon->File2Dun(dunpath);
 
     if(dungeonImported&&currentDungeon!=nullptr)
     {
         if(!batch){
             std::cout << "file readed succesfully" << std::endl;
             std::cout << "Imported dungeon:" << std::endl;
-            std::cout << "Size X: " << currentDungeon->size_x << std::endl;
-            std::cout << "Size Y: " << currentDungeon->size_y << std::endl;
-            std::cout << "Size Z: " << currentDungeon->size_z << std::endl;
+            std::cout << "Size X: " << currentDungeon->GetSize().x << std::endl;
+            std::cout << "Size Y: " << currentDungeon->GetSize().y << std::endl;
+            std::cout << "Size Z: " << currentDungeon->GetSize().z << std::endl;
         }
 
         if(batchImport && hasToInitDensityMap){
@@ -147,8 +145,6 @@ void DungeonStat::Update(){
         std::cout << "Generate path" << std::endl;
         generatingPath = true;
         std::jthread generatePathThread([this](){GeneratePath();});
-        // new std::jthread(GeneratePath);
-        // GeneratePath();
     }
     if(hasToSave) {
         hasToSave = false;
@@ -157,7 +153,7 @@ void DungeonStat::Update(){
 }
 
 void DungeonStat::Shutdown(){
-    freeDungeonMatrix(&currentDungeon);
+    delete currentDungeon;
     ClearBatchData();
 }
 
@@ -184,10 +180,10 @@ void DungeonStat::UpdateView(DungeonView* & view){
 }
 
 void DungeonStat::SetUpDensityMaps(){
-    densityMap.Init(currentDungeon->size_x,currentDungeon->size_z);
-    pathDensityMap.Init(currentDungeon->size_x,currentDungeon->size_z);
-    startDensityMap.Init(currentDungeon->size_x,currentDungeon->size_z);
-    goalDensityMap.Init(currentDungeon->size_x,currentDungeon->size_z);
+    densityMap.Init(currentDungeon->GetSize().x,currentDungeon->GetSize().z);
+    pathDensityMap.Init(currentDungeon->GetSize().x,currentDungeon->GetSize().z);
+    startDensityMap.Init(currentDungeon->GetSize().x,currentDungeon->GetSize().z);
+    goalDensityMap.Init(currentDungeon->GetSize().x,currentDungeon->GetSize().z);
 }
 
 void DungeonStat::GenerateStats(){
@@ -196,10 +192,10 @@ void DungeonStat::GenerateStats(){
     floorCount = 0;
 
     // calculate density map, calculate wall and floor count
-    for(int i = 0; i < currentDungeon->size_x;i++){
-        for(int j = 0; j < currentDungeon->size_y;j++){
-            for(int k = 0; k < currentDungeon->size_z;k++){
-                unsigned tile = currentDungeon->data[i][j][k];
+    for(unsigned int i = 0; i < currentDungeon->GetSize().x;i++){
+        for(unsigned int j = 0; j < currentDungeon->GetSize().y;j++){
+            for(unsigned int k = 0; k < currentDungeon->GetSize().z;k++){
+                unsigned tile = currentDungeon->GetPos({i,j,k});
                 if(tile&DUN_PXY_WALL) wallCount++;
                 if(tile&DUN_PYZ_WALL) wallCount++;
                 if(tile&DUN_PXZ_WALL) {
@@ -211,8 +207,8 @@ void DungeonStat::GenerateStats(){
     }
 
     // get linear distance and end/goal
-    start = {(float)currentDungeon->start_x,(float)currentDungeon->start_y,(float)currentDungeon->start_z};
-    end = {(float)currentDungeon->end_x,(float)currentDungeon->end_y,(float)currentDungeon->end_z};
+    start = {(float)currentDungeon->GetStart().x,(float)currentDungeon->GetStart().y,(float)currentDungeon->GetStart().z};
+    end = {(float)currentDungeon->GetEnd().x,(float)currentDungeon->GetEnd().y,(float)currentDungeon->GetEnd().z};
     linearDistanceStartGoal = Vector3Length( Vector3Subtract(end,start));
 
     if(batch){
@@ -240,8 +236,8 @@ void DungeonStat::GeneratePath(){
     Pathfinder finder(currentDungeon);
 
     dungeonPath = finder.AStar(
-        {(int)currentDungeon->start_x,(int)currentDungeon->start_y,(int)currentDungeon->start_z},
-        {(int)currentDungeon->end_x,(int)currentDungeon->end_y,(int)currentDungeon->end_z});
+        {(int)currentDungeon->GetStart().x,(int)currentDungeon->GetStart().y,(int)currentDungeon->GetStart().z},
+        {(int)currentDungeon->GetEnd().x,(int)currentDungeon->GetEnd().y,(int)currentDungeon->GetEnd().z});
 
     hasToGeneratePath = false;
     pathGenerated = true;

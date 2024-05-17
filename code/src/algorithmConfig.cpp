@@ -150,7 +150,8 @@ void AlgorithmConfig::Update(){
         runningAlgorithm = true;
 
         // we cant pass a non-static method
-        algorithmThread = new std::jthread(ThreadRunAlgorithm,std::ref(*this));
+        // algorithmThread = new std::jthread(ThreadRunAlgorithm,std::ref(*this));
+        std::jthread(ThreadRunAlgorithm,std::ref(*this));
     }
 };
 
@@ -173,7 +174,7 @@ void AlgorithmConfig::GenerateConfig(std::string help){
     std::string delimiter = "\n";
     size_t pos = 0;
     std::string line;
-    std::string wordregexp = "([\\w\\s':\\(\\)\\[\\]\\.\\,]*)";
+    std::string wordregexp = "([\\w\\s':\\(\\)\\[\\]\\{\\}\\.\\,]*)";
     std::regex exparg("\\t\\-(\\w*)\\t\\[(int|flt|str)\\]\\t"+wordregexp);
     std::regex expargnodesc("\\t\\-(\\w*)\\t\\[(int|flt|str)\\]");
     std::regex exptitle(wordregexp+"\\t"+wordregexp);
@@ -192,7 +193,7 @@ void AlgorithmConfig::GenerateConfig(std::string help){
             }
         } else if(std::regex_match(line,exptitle)){
             if(std::regex_search(line,sm1,exptitle)){
-                optionsLines.push_back({HelpSectionType::Title,ValueType::Void,sm1.str(1),sm1.str(1)});
+                optionsLines.push_back({HelpSectionType::Title,ValueType::Void,sm1.str(1),sm1.str(2)});
             }
         } else if(std::regex_match(line,exptitlenodesc)){
             if(std::regex_search(line,sm1,exptitlenodesc)){

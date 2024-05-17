@@ -5,11 +5,11 @@
 #include <queue>
 #include <iostream>
 
-int Node::CostDistance(dungeonMatrix * dungeon){
+int Node::CostDistance(DungeonMatrix * dungeon){
     Vector3 distance = {
-        (float)dungeon->end_x-(float)state.agentPos.x,
-        (float)dungeon->end_y-(float)state.agentPos.y,
-        (float)dungeon->end_z-(float)state.agentPos.z};
+        (float)dungeon->GetEnd().x-(float)state.agentPos.x,
+        (float)dungeon->GetEnd().y-(float)state.agentPos.y,
+        (float)dungeon->GetEnd().z-(float)state.agentPos.z};
 
     return (int)Vector3Length(distance); //we could use LengthSquared
 }
@@ -79,38 +79,54 @@ int DungeonPath::GetLength(){
     return steps.size();
 }
 
-bool DunState::TakeAction(Action action,dungeonMatrix * dungeon, DunState & newState){
+bool DunState::TakeAction(Action action,DungeonMatrix * dungeon, DunState & newState){
     newState = *this;
     switch(action){
     case Action::MOVE_FRONT:
-        std::cout << "    Trying to move z++" << std::endl;
-        if(agentPos.z+1>=dungeon->size_z) return false;
-        if(dungeon->data[agentPos.x][agentPos.y][agentPos.z+1]&DUN_PXY_WALL) return false;
+        // std::cout << "    Trying to move z++" << std::endl;
+        if(agentPos.z+1>=dungeon->GetSize().z) return false;
+        if(dungeon->GetPos({
+            (unsigned int)agentPos.x,
+            (unsigned int)agentPos.y,
+            (unsigned int)agentPos.z+1
+        })&DUN_PXY_WALL) return false;
         newState.agentPos.z++;
         break;
     case Action::MOVE_BACK:
-        std::cout << "    Trying to move z--" << std::endl;
+        // std::cout << "    Trying to move z--" << std::endl;
         if(agentPos.z<=0) return false;
-        if(dungeon->data[agentPos.x][agentPos.y][agentPos.z]&DUN_PXY_WALL) return false;
+        if(dungeon->GetPos({
+            (unsigned int)agentPos.x,
+            (unsigned int)agentPos.y,
+            (unsigned int)agentPos.z
+        })&DUN_PXY_WALL) return false;
         newState.agentPos.z--;
         break;
     case Action::MOVE_LEFT:
-        std::cout << "    Trying to move x--" << std::endl;
+        // std::cout << "    Trying to move x--" << std::endl;
         if(agentPos.x<=0) return false;
-        if(dungeon->data[agentPos.x][agentPos.y][agentPos.z]&DUN_PYZ_WALL) return false;
+        if(dungeon->GetPos({
+            (unsigned int)agentPos.x,
+            (unsigned int)agentPos.y,
+            (unsigned int)agentPos.z
+        })&DUN_PYZ_WALL) return false;
         newState.agentPos.x--;
         break;
     case Action::MOVE_RIGHT:
-        std::cout << "    Trying to move x++" << std::endl;
-        if(agentPos.x+1>=dungeon->size_x) return false;
-        if(dungeon->data[agentPos.x+1][agentPos.y][agentPos.z]&DUN_PYZ_WALL) return false;
+        // std::cout << "    Trying to move x++" << std::endl;
+        if(agentPos.x+1>=dungeon->GetSize().x) return false;
+        if(dungeon->GetPos({
+            (unsigned int)agentPos.x+1,
+            (unsigned int)agentPos.y,
+            (unsigned int)agentPos.z
+        })&DUN_PYZ_WALL) return false;
         newState.agentPos.x++;
         break;
     }
     return true;
 }
 
-Pathfinder::Pathfinder(dungeonMatrix * dungeon){
+Pathfinder::Pathfinder(DungeonMatrix * dungeon){
     this->dungeon = dungeon;
 }
 
