@@ -62,7 +62,6 @@ void AlgorithmList::Reload(){
         // Iterate over the files in the directory
         for (const auto& entry : std::filesystem::directory_iterator(dir)) {
             algorithms.push_back(entry.path().filename().string());
-            // std::cout << entry.path().filename().string() << std::endl;
         }
     } else {
         std::cerr << "Directory does not exist or is not a directory." << std::endl;
@@ -73,7 +72,6 @@ void AlgorithmList::Reload(){
 
 void AlgorithmList::UpdateAlgorithms(std::vector<AlgorithmConfig*> * algorithms){
     if(selected!=""){
-        std::cout << "Selected " << selected << std::endl;
         int index = -1;
         for(int i = 0 ; i < algorithms->size();i++){
             if((*algorithms)[i]->GetName()==selected) index = i;
@@ -91,7 +89,6 @@ void AlgorithmList::UpdateAlgorithms(std::vector<AlgorithmConfig*> * algorithms)
 
 void AlgorithmList::UpdateDungeonTabs(std::vector<DungeonTab*> * algorithms){
     if(selected!=""){
-        std::cout << "Selected " << selected << std::endl;
         int index = -1;
         for(int i = 0 ; i < algorithms->size();i++){
             if((*algorithms)[i]->GetAlgorithmName()==selected) index = i;

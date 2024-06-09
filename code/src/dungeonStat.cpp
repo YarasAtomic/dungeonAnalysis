@@ -15,7 +15,7 @@ DungeonStat::DungeonStat(std::string path,std::string dunname,bool isGenerated,b
 
 void DungeonStat::SaveStats(){
     nfdchar_t *outPath = NULL;
-    nfdresult_t result = NFD_SaveDialog( "csv", "~", &outPath );
+    nfdresult_t result = NFD_SaveDialog( "csv", "~/data.csv", &outPath );
     if(result!=NFD_OKAY) return;
     std::cout << std::string(outPath) << std::endl;
 
@@ -30,7 +30,8 @@ void DungeonStat::SaveStats(){
             << statsBatch[i]->floorCount << "," 
             << statsBatch[i]->wallCount << "," 
             << statsBatch[i]->linearDistanceStartGoal << "," 
-            << statsBatch[i]->dungeonPathLength << "," << std::endl;
+            << statsBatch[i]->dungeonPathLength << "," 
+            << statsBatch[i]->generationTime << "," << std::endl;
     }
 
     fout.close();
@@ -88,38 +89,44 @@ void DungeonStat::ShowAsChild()
     ImGui::EndChild();
 }
 
-void DungeonStat::Show(){
-    if(statsGenerated){
-        if(batch){
-            if(ImGui::Button("Export CSV")) hasToSave = true;
-            int baseColumns = 5;
-            ImGui::BeginTable("statsTable",baseColumns,ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Resizable);
-            ImGui::TableSetupColumn("Wall count");
-            ImGui::TableSetupColumn("Floor count");
-            ImGui::TableSetupColumn("Distance S/G");
-            ImGui::TableSetupColumn("Generation time (seconds)");
-            ImGui::TableSetupColumn("Steps S/G");
-            ImGui::TableHeadersRow();
-            
-            for(int i = 0; i < statsBatch.size();i++){
+void DungeonStat::Show(){ 
+    if(batch){
+        if(ImGui::Button("Export CSV")) hasToSave = true;
+        int baseColumns = 5;
+        static ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable;
+        ImGui::BeginTable("statsTable",baseColumns,flags);
+        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableSetupColumn("Wall count");
+        ImGui::TableSetupColumn("Floor count");
+        ImGui::TableSetupColumn("Distance S/G");
+        ImGui::TableSetupColumn("Generation time (seconds)");
+        ImGui::TableSetupColumn("Steps S/G");
+        ImGui::TableHeadersRow();
+
+        ImGuiListClipper clipper;
+        clipper.Begin(statsBatch.size());
+        while(clipper.Step()){
+            for(int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++){
                 ImGui::TableNextRow();
-                ImGui::TableNextColumn();
+                ImGui::TableSetColumnIndex(0);
                 ImGui::Text("%i",statsBatch[i]->wallCount);
-                ImGui::TableNextColumn();
+                ImGui::TableSetColumnIndex(1);
                 ImGui::Text("%i",statsBatch[i]->floorCount);
-                ImGui::TableNextColumn();
+                ImGui::TableSetColumnIndex(2);
                 ImGui::Text("%f",statsBatch[i]->linearDistanceStartGoal);
-                ImGui::TableNextColumn();
+                ImGui::TableSetColumnIndex(3);
                 ImGui::Text("%f",statsBatch[i]->generationTime);
-                ImGui::TableNextColumn();
+                ImGui::TableSetColumnIndex(4);
                 if(statsBatch[i]->pathGenerated){
                     ImGui::Text("%i",statsBatch[i]->dungeonPathLength);
                 }else{
                     ImGui::Text("???");
                 }
             }
-            ImGui::EndTable();
-        }else{
+        }
+        ImGui::EndTable();
+    }else{
+        if(statsGenerated){
             ImGui::Text("Wall count:\t%i",wallCount);
             ImGui::Text("Floor count:\t%i",floorCount);
             ImGui::Text("Linear distance S/G:\t%f",linearDistanceStartGoal);
@@ -128,14 +135,14 @@ void DungeonStat::Show(){
             }
             if(pathGenerated)
                 ImGui::Text("Step count S/G:\t%i",dungeonPath.GetLength());
-        }
 
-        ImGui::BeginDisabled(pathGenerated);
+            ImGui::BeginDisabled(pathGenerated);
         
-        if(ImGui::Button("Resolve")){
-            hasToGeneratePath = true;
+            if(ImGui::Button("Resolve")){
+                hasToGeneratePath = true;
+            }
+            ImGui::EndDisabled();
         }
-        ImGui::EndDisabled();
     }
 }
 
@@ -232,7 +239,6 @@ bool DungeonStat::IsBatch(){
 }
 
 void DungeonStat::GeneratePath(){
-    std::cout << "Generating path in new thread" << std::endl;
     Pathfinder finder(currentDungeon);
 
     dungeonPath = finder.AStar(
@@ -288,16 +294,16 @@ void DungeonStat::DrawDensityMap(Vector3 pos, Vector3 size, Color color){
 }
 
 void DungeonStat::DrawStartDensityMap(Vector3 pos, Vector3 size, Color color){
-    // startDensityMap.DrawDivided(pos,size,color,statsBatch.size(),&densityMap);
-    startDensityMap.Draw(pos,size,color,statsBatch.size());
+    startDensityMap.Draw(pos,size,color,startDensityMap.GetMax());
+    // startDensityMap.Draw(pos,size,color,statsBatch.size());
 }
 
 void DungeonStat::DrawGoalDensityMap(Vector3 pos, Vector3 size, Color color){
-    goalDensityMap.DrawDivided(pos,size,color,statsBatch.size(),&densityMap);
+    goalDensityMap.Draw(pos,size,color,goalDensityMap.GetMax());
     // goalDensityMap.Draw(pos,size,color,statsBatch.size());
 }
 
 void DungeonStat::DrawPathDensityMap(Vector3 pos, Vector3 size, Color color){
-    pathDensityMap.DrawDivided(pos,size,color,statsBatch.size(),&densityMap);
+    pathDensityMap.Draw(pos,size,color,pathDensityMap.GetMax());
     // pathDensityMap.Draw(pos,size,color,statsBatch.size());
 }

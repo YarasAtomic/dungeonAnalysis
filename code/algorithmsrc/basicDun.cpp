@@ -4,7 +4,8 @@
 #include <stdlib.h> 
 #include <random>
 
-const int HALL_ID = 9999;
+const int HALL_ID = -2;
+const int EMPTY_ID = -1;
 
 // ---------------------------------------------------
 // ------------- GENERATION --------------------------
@@ -15,56 +16,18 @@ struct roomOptions{
     int minRoomWidth;
     int maxRoomDepth;
     int minRoomDepth;
-    int chanceTotal;
-    int probability;
+    float probability;
     int minHallLength;
     int maxHallLength;
 };
 
-void printDungeon(std::vector<std::vector<int>> * dungeon){
-    std::cout << "\t";
-    for(int i = 0; i < dungeon->size(); i+=2)
-    {
-        if(i<=9)
-            std::cout << i << "   ";
-        else
-            std::cout << i << "  ";
-    }
-    std::cout << std::endl << "\t  ";
+struct tileInfo{
+    int roomId = -1;  
+    int hallId0 = -1;
+    int hallId1 = -1;
+};
 
-    for(int i = 1; i < dungeon->size(); i+=2)
-    {
-        if(i<=9)
-            std::cout << i << "   ";
-        else
-            std::cout << i << "  ";
-    }
-    std::cout << std::endl;
-
-    for(int j = 0; j < (*dungeon)[0].size(); j++)
-    {
-        std::cout << j << "\t";
-        for(int i = 0; i < dungeon->size(); i++)
-        {
-            int v = (*dungeon)[i][j];
-            if(v >= 0 && v <= 9)
-                std::cout << v << " ";
-            else if(v > 9 && v <= ('z'-'a' + 10))
-                std::cout << (char)(('a')+v-10) << " ";
-            else if(v > ('z'-'a' + 10) && v <= ('z'-'a')*2 + 10)
-                std::cout << (char)(('A')+v-10-('z'-'a')) << " ";
-            else if(v < 0)
-                std::cout << "· ";
-            else if(v == HALL_ID)
-                std::cout << "# ";
-            else 
-                std::cout << "? ";
-        }
-        // std::cout << std::endl;
-    } 
-}
-
-void generateHallTiles(int x, int y, int dir, int length,std::vector<std::vector<int>> * dungeon){
+void generateHallTiles(int x, int y, int dir, int length,std::vector<std::vector<tileInfo>> * dungeon,int room0,int room1){
     int posX = 0;
     int posY = 0;
     for(int i = 0; i < length; i++)
@@ -88,20 +51,22 @@ void generateHallTiles(int x, int y, int dir, int length,std::vector<std::vector
             posX = x;
             break;
         }
-        if(posY >= 0 && posX >= 0 && posX < dungeon->size() && posY < (*dungeon)[0].size() && (*dungeon)[posX][posY] < 0)
-            (*dungeon)[posX][posY] = HALL_ID;
+        if(posY >= 0 && posX >= 0 && posX < dungeon->size() && posY < (*dungeon)[0].size() && (*dungeon)[posX][posY].roomId == EMPTY_ID){
+            (*dungeon)[posX][posY].roomId = HALL_ID;
+        }
+        (*dungeon)[posX][posY].hallId0 = room0;
+        (*dungeon)[posX][posY].hallId1 = room1;
     }
 }
 
-bool testHallTiles(int x, int y, int dir, int length,std::vector<std::vector<int>> * dungeon,int ignore){
+
+bool testHallTiles(int x, int y, int dir, int length,std::vector<std::vector<tileInfo>> * dungeon,int ignore){
     bool valid = true;
 
-    for(int i = 0; i < length; i++)
-    {
+    for(int i = 0; i < length; i++){
         int posX = -1;
         int posY = -1;
-        switch(dir)
-        {
+        switch(dir){
         case 0:
             posX = x+i;
             posY = y;
@@ -119,9 +84,8 @@ bool testHallTiles(int x, int y, int dir, int length,std::vector<std::vector<int
             posY = y-i;
             break;
         }
-        if(posY >= 0 && posX >= 0 && posX<dungeon->size()&&posY<(*dungeon)[0].size())
-        {
-            if((*dungeon)[posX][posY]>=0&&(*dungeon)[posX][posY]!=ignore)
+        if(posY >= 0 && posX >= 0 && posX<dungeon->size()&&posY<(*dungeon)[0].size()){
+            if((*dungeon)[posX][posY].roomId!=EMPTY_ID&&(*dungeon)[posX][posY].roomId!=ignore)
                 valid = false;
         }
         else
@@ -130,7 +94,7 @@ bool testHallTiles(int x, int y, int dir, int length,std::vector<std::vector<int
     return valid;
 }
 
-void generateRoomTiles(int x, int y, int roomWidth, int roomDepth,std::vector<std::vector<int>> * dungeon, int value){
+void generateRoomTiles(int x, int y, int roomWidth, int roomDepth,std::vector<std::vector<tileInfo>> * dungeon, int value){
     int cornerX = x - roomWidth / 2;
     int cornerY = y - roomDepth / 2;
     for(int i = 0; i < roomWidth; i++)
@@ -139,29 +103,26 @@ void generateRoomTiles(int x, int y, int roomWidth, int roomDepth,std::vector<st
         {
             if(cornerX + i < dungeon->size() && cornerY + j < (*dungeon)[0].size())
             {
-                (*dungeon)[cornerX + i][cornerY + j] = value;
+                (*dungeon)[cornerX + i][cornerY + j].roomId = value;
             }
         }
     }
 }
 
-bool testRoomTiles(int x, int y,int roomWidth, int roomDepth,std::vector<std::vector<int>> * dungeon){
+bool testRoomTiles(int x, int y,int roomWidth, int roomDepth,std::vector<std::vector<tileInfo>> * dungeon){
     int cornerX = x - roomWidth / 2;
     int cornerY = y - roomDepth / 2;
-    bool valid = true;
-    for(int i = 0; i < roomWidth; i++)
-    {
-        for(int j = 0; j < roomDepth; j++)
-        {
-            if(!(cornerX + i < dungeon->size() && cornerY + j < (*dungeon)[0].size() && (*dungeon)[cornerX + i][cornerY + j] < 0))
-                valid = false;
+    for(int i = 0; i < roomWidth; i++){
+        for(int j = 0; j < roomDepth; j++){
+            if(!(cornerX + i < dungeon->size() && cornerY + j < (*dungeon)[0].size() && (*dungeon)[cornerX + i][cornerY + j].roomId == EMPTY_ID))
+                return false;
         }
     }
 
-    return valid;
+    return true;
 }
 
-bool generateRoom(int x, int y,roomOptions opts,std::vector<std::vector<int>> * dungeon, int * value,int * endX,int * endY){
+bool generateRoom(int x, int y,roomOptions opts,std::vector<std::vector<tileInfo>> * dungeon, int * value,int * endX,int * endY,int hallDir = -1,int hallLength = -1,int parent = -1){
     int roomWidth = 0;
     int roomDepth = 0;
     int id = (*value);
@@ -178,11 +139,12 @@ bool generateRoom(int x, int y,roomOptions opts,std::vector<std::vector<int>> * 
 
     if(testRoomTiles(x,y,roomWidth,roomDepth,dungeon))
     {
+        if(hallLength!=-1 && hallDir!=-1 && parent !=-1)
+            generateHallTiles(x,y,(hallDir+2)%4,hallLength,dungeon,(*value),parent);
         generateRoomTiles(x,y,roomWidth,roomDepth,dungeon,(*value));
 
         (*endX) = x;
         (*endY) = y;
-
         (*value)++;
         int length = 0;
 
@@ -192,54 +154,65 @@ bool generateRoom(int x, int y,roomOptions opts,std::vector<std::vector<int>> * 
             length = rand()%(opts.maxHallLength - opts.minHallLength) + opts.minHallLength;
 
         // Right
-        if(rand()%opts.chanceTotal<opts.probability)
+        if(rand()/(float)RAND_MAX<=opts.probability)
         {
+            int expectedId = (*value);
             if(testHallTiles(x,y,0,length,dungeon,id))
-                if(generateRoom(x + length,y,opts,dungeon,value,endX,endY))
-                    generateHallTiles(x,y,0,length,dungeon);
+                // if(generateRoom(x + length,y,opts,dungeon,value,endX,endY))
+                //     generateHallTiles(x,y,0,length,dungeon,expectedId,id);
+                generateRoom(x + length,y,opts,dungeon,value,endX,endY,0,length,id);
         }
             
         // Left
-        if(rand()%opts.chanceTotal<opts.probability)
+        if(rand()/(float)RAND_MAX<=opts.probability)
         {
+            int expectedId = (*value);
             if(testHallTiles(x,y,2,length,dungeon,id))
-                if(generateRoom(x - length,y,opts,dungeon,value,endX,endY))
-                    generateHallTiles(x,y,2,length,dungeon);
+                // if(generateRoom(x - length,y,opts,dungeon,value,endX,endY))
+                //     generateHallTiles(x,y,2,length,dungeon,expectedId,id);
+                generateRoom(x - length,y,opts,dungeon,value,endX,endY,2,length,id);
+
         }
 
         // Down
-        if(rand()%opts.chanceTotal<opts.probability)
+        if(rand()/(float)RAND_MAX<=opts.probability)
         {
+            int expectedId = (*value);
             if(testHallTiles(x,y,1,length,dungeon,id))
-                if(generateRoom(x,y + length,opts,dungeon,value,endX,endY))
-                    generateHallTiles(x,y,1,length,dungeon);
+                // if(generateRoom(x,y + length,opts,dungeon,value,endX,endY))
+                //     generateHallTiles(x,y,1,length,dungeon,expectedId,id);
+                generateRoom(x,y + length,opts,dungeon,value,endX,endY,1,length,id);
         }
 
         // Up
-        if(rand()%opts.chanceTotal<opts.probability)
+        if(rand()/(float)RAND_MAX<=opts.probability)
         {
+            int expectedId = (*value);
             if(testHallTiles(x,y,3,length,dungeon,id))
-                if(generateRoom(x,y - length,opts,dungeon,value,endX,endY))
-                    generateHallTiles(x,y,3,length,dungeon);
+                // if(generateRoom(x,y - length,opts,dungeon,value,endX,endY))
+                //     generateHallTiles(x,y,3,length,dungeon,expectedId,id);
+                generateRoom(x,y - length,opts,dungeon,value,endX,endY,3,length,id);
+
         }
         return true;
     }
     return false;
 }
 
-bool isSeparated(int origin,int other){
-    if(origin < 0 && other == HALL_ID) return true;
-    if(other < 0 && origin == HALL_ID) return true;
-    if(other != HALL_ID && origin != HALL_ID)
-    {
-        if(origin>=0 && other!=origin) return true;
-        if(other>=0 && other!=origin) return true;
+bool isSeparated(int origin,int other,int hall0,int hall1){
+    if(origin == EMPTY_ID && other == EMPTY_ID) return false;
+    if(origin == EMPTY_ID && other == HALL_ID) return true;
+    if(other == EMPTY_ID && origin == HALL_ID) return true;
+    if(other != HALL_ID && origin != HALL_ID){
+        if((origin==hall0&&other==hall1)||(origin==hall1&&other==hall0)) return false;
+        if(origin!=EMPTY_ID && other!=origin) return true;
+        if(other!=EMPTY_ID && other!=origin) return true;
     }
 
     return false;
 }
 
-DungeonMatrix* vector2dungeon(std::vector<std::vector<int>> * dun){
+DungeonMatrix* vector2dungeon(std::vector<std::vector<tileInfo>> * dun){
     
     int sizeY = (*dun)[0].size();
     int sizeX = dun->size();
@@ -252,17 +225,19 @@ DungeonMatrix* vector2dungeon(std::vector<std::vector<int>> * dun){
         for(int j = 0; j < sizeY;j++)
         {
             unsigned int tile = 0;
-            int v = (*dun)[i][j];
+            int v = (*dun)[i][j].roomId;
+            int h0 = (*dun)[i][j].hallId0;
+            int h1 = (*dun)[i][j].hallId1;
             
             if(i>0)
-                if(isSeparated(v,(*dun)[i-1][j]))
+                if(isSeparated(v,(*dun)[i-1][j].roomId,h0,h1))
                     tile |= DUN_PYZ_WALL;
                     
             if(j>0)
-                if(isSeparated(v,(*dun)[i][j-1]))
+                if(isSeparated(v,(*dun)[i][j-1].roomId,h0,h1))
                     tile |= DUN_PXY_WALL;
                     
-            if(v>=0)
+            if(v!=EMPTY_ID)
                 tile |= DUN_PXZ_WALL;
 
             matrix->SetPos(i,0,j,tile);
@@ -274,18 +249,16 @@ DungeonMatrix* vector2dungeon(std::vector<std::vector<int>> * dun){
 
 DungeonMatrix * generate(int width, int depth,roomOptions opts,int seed){
     srand (seed);
-    std::vector<std::vector<int>> dungeon;
+    std::vector<std::vector<tileInfo>> dungeon;
 
     dungeon.resize(width);
 
     for(int i = 0; i < width ; i++){
         dungeon[i].resize(depth);
         for(int j = 0; j < depth; j++){
-            dungeon[i][j] = -1;
+            dungeon[i][j].roomId = EMPTY_ID;
         }
     }
-
-    std::cout << "1\n";
 
     int defaultEndX = -1;
     int defaultEndY = -1;
@@ -300,11 +273,8 @@ DungeonMatrix * generate(int width, int depth,roomOptions opts,int seed){
 
         generateRoom(width/2,depth/2,opts,&dungeon,&roomNumber,endX,endY);
     }
-    std::cout << "2\n";
 
-    // printDungeon(&dungeon);
     DungeonMatrix * dun = vector2dungeon(&dungeon);
-    std::cout << "3\n";
 
     dun->SetStart(width/2,0,depth/2);
     dun->SetEnd(*endX,0,*endY);
@@ -319,16 +289,15 @@ int main(int args,char ** argv){
     ArgHandler argHandler;
     std::random_device rd;
     int seed = rd();
-    argHandler.AddArg("width",64,"dungeon's width");
-    argHandler.AddArg("depth",64,"dungeon's depth");
+    argHandler.AddArg("width",50,"dungeon's width");
+    argHandler.AddArg("depth",50,"dungeon's depth");
     argHandler.AddArg("rmMaxDepth",10,"a room's maximun depth");
     argHandler.AddArg("rmMinDepth",5,"a room's minimun depth");
     argHandler.AddArg("rmMaxWidth",10,"a room's maximun width");
     argHandler.AddArg("rmMinWidth",5,"a room's minimun width");
     argHandler.AddArg("hallMin",10,"a hall's minimun length");
     argHandler.AddArg("hallMax",15,"a hall's maximun length");
-    argHandler.AddArg("chance",4,"sets {totalChance} value");
-    argHandler.AddArg("prob",3,"sets {probability} value");
+    argHandler.AddArg("prob",0.5f,"sets {probability} value");
 
     argHandler.AddStringArg("o","a.dun","output file name");
 
@@ -346,9 +315,8 @@ int main(int args,char ** argv){
         argHandler.PrintHelp("hallMax");
         std::cout << "Room chance:\t";
         std::cout << "Each time a room spawns, it will try to spawn one more room at each side. ";
-        std::cout << "A number between 0 and {totalChance} will be generated, ";
+        std::cout << "A float number between 0 and 1 will be generated, ";
         std::cout << "if the number is less than {probability}, a room will spawn." << std::endl; 
-        argHandler.PrintHelp("chance");
         argHandler.PrintHelp("prob");
         std::cout << "General" << std::endl;
         argHandler.PrintHelp("seed");
@@ -361,19 +329,16 @@ int main(int args,char ** argv){
         argHandler.GetIntArg("rmMinWidth"),
         argHandler.GetIntArg("rmMaxDepth"),
         argHandler.GetIntArg("rmMinDepth"),
-        argHandler.GetIntArg("chance"),
-        argHandler.GetIntArg("prob"),
+        argHandler.GetFloatArg("prob"),
         argHandler.GetIntArg("hallMin"),
         argHandler.GetIntArg("hallMax")
     };
 
     DungeonMatrix * dun = generate(argHandler.GetIntArg("width"),argHandler.GetIntArg("depth"),opts,argHandler.GetIntArg("seed"));
-    std::cout << "4\n";
     if(dun->Dun2File(argHandler.GetStringArg("o"))){
         std::cout << "archivo generado" << std::endl;
     }
     else{
         std::cout << "el archivo no se ha podido generar" << std::endl;
     }
-    
 }

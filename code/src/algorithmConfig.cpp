@@ -17,7 +17,6 @@ void AlgorithmConfig::GetHelp(){
     std::string command = (dirpath+"/"+ filename+ " " + "-help");
     std::string result = commandFifo(command,outdirpath+"/tempfifo");
     if(result== "") return;
-    // std::cout << "Captured Output:\n" << result;
     GenerateConfig(result);
 }
 
@@ -122,9 +121,7 @@ void AlgorithmConfig::Show(){
     if(batchRun < 1) batchRun = 1;
     ImGui::EndDisabled();
     if(runningAlgorithm){
-        
         if(runModeBatch){
-            
             char buf[32];
             int done = batchRun-pendingRuns;
             sprintf(buf, "%d/%d", done, batchRun);
@@ -150,8 +147,7 @@ void AlgorithmConfig::Update(){
         runningAlgorithm = true;
 
         // we cant pass a non-static method
-        // algorithmThread = new std::jthread(ThreadRunAlgorithm,std::ref(*this));
-        std::jthread(ThreadRunAlgorithm,std::ref(*this));
+        algorithmThread = new std::jthread(ThreadRunAlgorithm,std::ref(*this));
     }
 };
 
@@ -203,6 +199,7 @@ void AlgorithmConfig::GenerateConfig(std::string help){
     }
 
     configGenerated = true;
+    std::cout << "config generated\n";
 }
 
 std::string AlgorithmConfig::GetOptionName(std::string string){

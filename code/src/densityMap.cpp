@@ -1,4 +1,5 @@
 #include "densityMap.h"
+#include <iostream>
 
 DensityMap::DensityMap(){}
 
@@ -7,6 +8,7 @@ DensityMap::DensityMap(int sizeX, int sizeY){
 }
 
 void DensityMap::Init(int sizeX,int sizeY){
+    max = 0;
     width = sizeX;
     height = sizeY;
     if(data!=nullptr) delete data;
@@ -16,16 +18,32 @@ void DensityMap::Init(int sizeX,int sizeY){
         (*data)[i] = std::vector<unsigned int> (sizeY,0);// initialize density map
 }
 
+unsigned int DensityMap::GetMax() const{
+    return max;
+}
+
 unsigned int DensityMap::Get(int x, int y) const{
     return (*data)[x][y];
 }
 
 void DensityMap::Set(int x, int y, unsigned v){
+    // check if the max has changed
+    if(v>max) max = v;
+    else if((*data)[x][y] == max){
+        max = 0;
+        for(int i = 0; i < width;i++)
+            for(int j = 0; j < height;j++)
+                if((*data)[i][j]>max) max = (*data)[i][j];
+    }
+    // change value
     (*data)[x][y] = v;
 }
 
 void DensityMap::Add(int x, int y, int v){
+    // change value
     (*data)[x][y] += v;
+    // check if the max has changed
+    if((*data)[x][y]>max) max = (*data)[x][y];
 }
 
 DensityMap::~DensityMap(){

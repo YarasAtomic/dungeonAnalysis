@@ -206,11 +206,33 @@ DungeonMatrix * generateDungeon(int width,int height,int minWidthSpace,int minHe
     for(unsigned int i = 0; i < width;i++){
         for(unsigned int j = 0; j < height;j++){
             if( (dungeon)[i][j]>=0) matrix->SetPos({i,0,j},DUN_PXZ_WALL);
-
             if(i>0&&dungeon[i-1][j]!=(dungeon)[i][j]) matrix->SetPos({i,0,j},matrix->GetPos({i,0,j}) | DUN_PYZ_WALL);
             if(j>0&&dungeon[i][j-1]!=(dungeon)[i][j]) matrix->SetPos({i,0,j},matrix->GetPos({i,0,j}) | DUN_PXY_WALL);
         }
-        std::cout << std::endl;
+    }
+
+    //place start
+    bool valid = false;
+
+    while(!valid){
+        unsigned int x = rand() % matrix->GetSize().x;
+        unsigned int z = rand() % matrix->GetSize().z;
+        if(matrix->CheckPos({x,0,z},DUN_PXZ_WALL)){
+            valid = true;
+            matrix->SetStart({x,0,z});
+        }
+    }
+
+    // place end
+    valid = false;
+
+    while(!valid){
+        unsigned int x = rand() % matrix->GetSize().x;
+        unsigned int z = rand() % matrix->GetSize().z;
+        if(matrix->CheckPos({x,0,z},DUN_PXZ_WALL)){
+            valid = true;
+            matrix->SetEnd({x,0,z});
+        }
     }
 
     postOrderJoiner(root, matrix);
@@ -277,12 +299,10 @@ int main(int args,char ** argv){
 
     std::string filename = argHandler.GetStringArg("o");
 
-    if(dungeon->Dun2File(filename))
-    {
+    if(dungeon->Dun2File(filename)){
         std::cout << "archivo generado" << std::endl;
     }
-    else
-    {
+    else{
         std::cout << "el archivo no se ha podido generar" << std::endl;
     }
 

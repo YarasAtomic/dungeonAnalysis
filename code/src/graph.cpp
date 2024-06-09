@@ -83,7 +83,6 @@ bool DunState::TakeAction(Action action,DungeonMatrix * dungeon, DunState & newS
     newState = *this;
     switch(action){
     case Action::MOVE_FRONT:
-        // std::cout << "    Trying to move z++" << std::endl;
         if(agentPos.z+1>=dungeon->GetSize().z) return false;
         if(dungeon->GetPos({
             (unsigned int)agentPos.x,
@@ -93,7 +92,6 @@ bool DunState::TakeAction(Action action,DungeonMatrix * dungeon, DunState & newS
         newState.agentPos.z++;
         break;
     case Action::MOVE_BACK:
-        // std::cout << "    Trying to move z--" << std::endl;
         if(agentPos.z<=0) return false;
         if(dungeon->GetPos({
             (unsigned int)agentPos.x,
@@ -103,7 +101,6 @@ bool DunState::TakeAction(Action action,DungeonMatrix * dungeon, DunState & newS
         newState.agentPos.z--;
         break;
     case Action::MOVE_LEFT:
-        // std::cout << "    Trying to move x--" << std::endl;
         if(agentPos.x<=0) return false;
         if(dungeon->GetPos({
             (unsigned int)agentPos.x,
@@ -113,7 +110,6 @@ bool DunState::TakeAction(Action action,DungeonMatrix * dungeon, DunState & newS
         newState.agentPos.x--;
         break;
     case Action::MOVE_RIGHT:
-        // std::cout << "    Trying to move x++" << std::endl;
         if(agentPos.x+1>=dungeon->GetSize().x) return false;
         if(dungeon->GetPos({
             (unsigned int)agentPos.x+1,
@@ -161,15 +157,9 @@ DungeonPath Pathfinder::AStar(Vector3Int start,Vector3Int end){
             
         }
         current = openNodes.top();
-        // std::cout << "iteration " << iteration << std::endl;
-        // std::cout << "explored count " << exploredStates.size() << std::endl;
-        // std::cout << "  Developing node " 
-        // << Vector3String({(float)current.state.agentPos.x,(float)current.state.agentPos.y,(float)current.state.agentPos.z}) 
-        // << " C:" << current.accumulatedCost << std::endl;
 
         if((current.state.agentPos.x==end.x)&&(current.state.agentPos.y==end.y)&&(current.state.agentPos.z==end.z)){
             found = true;
-            // std::cout << "Sequence length " << current.sequence.size() << std::endl;
             path.FromSequence(start,current.sequence);
             path.valid = true;
             return path;
@@ -178,25 +168,16 @@ DungeonPath Pathfinder::AStar(Vector3Int start,Vector3Int end){
         for(int i = 0; i < actionCount; i++){
             DunState newState;
             if(current.state.TakeAction(actions[i],dungeon,newState)){
-                // std::cout << "  --> " 
-                // << Vector3String({(float)newState.agentPos.x,(float)newState.agentPos.y,(float)newState.agentPos.z}) << std::endl;
                 if(exploredStates.find(newState)==exploredStates.end()){
                     Node newNode;
                     newNode.sequence = current.sequence;
                     newNode.sequence.push_back(actions[i]);
                     newNode.state = newState;
                     newNode.cost = newNode.CostDistance(dungeon);
-                    // newNode.cost = 1;
                     newNode.accumulatedCost = current.accumulatedCost+newNode.cost;
                     openNodes.push(newNode);
-                    auto pair = exploredStates.insert(newState);
-                    
-                    // std::cout << "  \tOK " << pair.second  << std::endl;
-                }else{
-                    // std::cout << "  \tAlready exists" << std::endl;
+                    auto pair = exploredStates.insert(newState);                    
                 }
-            }else{
-                // std::cout << "  \tCant" << std::endl;
             }
         }
         openNodes.pop();

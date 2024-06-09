@@ -25,7 +25,7 @@ void ArgHandler::AddStringArg(std::string key,std::string defaultValue,std::stri
 void ArgHandler::AddArg(std::string key,float defaultValue,std::string description){
     if(argEntries.find(key)==argEntries.end()){
         ArgEntry newArg;
-        newArg.type = ArgType::STRING;
+        newArg.type = ArgType::FLOAT;
         newArg.value = std::to_string(defaultValue);
         newArg.description = description;
         argEntries.insert(std::pair<std::string,ArgEntry> (key,newArg));
@@ -35,7 +35,7 @@ void ArgHandler::AddArg(std::string key,float defaultValue,std::string descripti
 void ArgHandler::AddArg(std::string key,bool defaultValue,std::string description){
     if(argEntries.find(key)==argEntries.end()){
         ArgEntry newArg;
-        newArg.type = ArgType::STRING;
+        newArg.type = ArgType::BOOL;
         newArg.value = defaultValue ? "true" : "false";
         newArg.description = description;
         argEntries.insert(std::pair<std::string,ArgEntry> (key,newArg));
@@ -90,6 +90,16 @@ int ArgHandler::GetIntArg(std::string key){
     return -1;
 }
 
+float ArgHandler::GetFloatArg(std::string key){
+    auto argData = argEntries.find(key);
+    if(argData!=argEntries.end()){
+        if(argData->second.type==ArgType::FLOAT){
+            return stof(argData->second.value);
+        }
+    }
+    return -1;
+}
+
 std::string ArgHandler::GetStringArg(std::string key){
     auto argData = argEntries.find(key);
     if(argData!=argEntries.end()){
@@ -116,7 +126,6 @@ void ArgHandler::PrintHelp(std::string key){
             stringType = "[bol]";
             break;
         }
-        std::cout << "\t-"<<key<<"\t" << stringType <<"\t"<<argData->second.description << std::endl;
     }
 }
 

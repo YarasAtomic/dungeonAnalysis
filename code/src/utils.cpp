@@ -79,7 +79,6 @@ bool isPointInside(Vector2 * poly,int pCount, Vector2 point)
         if(!isPointLeftOf(poly[i],poly[next],point)) return false;
     }
 
-    // std::cout << Vector2String(point) << " v0 " << Vector2String(poly[0]) << " v1 " << Vector2String(poly[1]) << " v2 " << Vector2String(poly[2]) << std::endl;
 
     return true;
 }
@@ -273,12 +272,6 @@ std::string commandFifo(std::string command,std::string fifoFile){
         // Read the output from the temporary file
         std::ifstream file(fifoFile);
         capturedOutput = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-        // Process the captured output as needed
-        // std::cout << "Captured Output:\n" << capturedOutput;
-    } else {
-        // There was an error in executing the command
-        // Add your code here for handling the error
     }
 
     // Remove the temporary file

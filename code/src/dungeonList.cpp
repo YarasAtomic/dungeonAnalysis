@@ -60,7 +60,6 @@ void DungeonList::Reload(){
         // Iterate over the files in the directory
         for (const auto& entry : std::filesystem::directory_iterator(dir)) {
             dungeons.push_back(entry.path().filename().string());
-            // std::cout << entry.path().filename().string() << std::endl;
         }
     } else {
         std::cerr << "Directory does not exist or is not a directory." << std::endl;
@@ -71,7 +70,6 @@ void DungeonList::Reload(){
 
 void DungeonList::UpdateDungeons(std::vector<DungeonStat*> * dungeons){
     if(selected!=""){
-        std::cout << "Selected " << selected << std::endl;
         int index = -1;
         for(int i = 0 ; i < dungeons->size();i++){
             if((*dungeons)[i]->GetName()==selected) index = i;
@@ -90,7 +88,6 @@ void DungeonList::UpdateDungeons(std::vector<DungeonStat*> * dungeons){
 
 void DungeonList::UpdateDungeonTabs(std::vector<DungeonTab*> * dungeons){
     if(selected!=""){
-        std::cout << "Selected " << selected << std::endl;
         int index = -1;
         for(int i = 0 ; i < dungeons->size();i++){
             if((*dungeons)[i]->GetDungeonName()==selected) index = i;
